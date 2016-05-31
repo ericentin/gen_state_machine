@@ -1,6 +1,6 @@
 # GenStateMachine
 
-**TODO: Add description**
+Elixir wrapper for gen_statem.
 
 ## Installation
 

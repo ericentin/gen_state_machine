@@ -136,7 +136,7 @@ defmodule GenStateMachine do
     :gen_statem.stop(server, reason, timeout)
   end
 
-  def call(server, request, timeout \\ 5000) do
+  def call(server, request, timeout \\ :infinity) do
     :gen_statem.call(server, request, timeout)
   end
 
