@@ -12,6 +12,7 @@ defmodule GenStateMachine.Mixfile do
      deps: deps,
      description: description,
      package: package,
+     source_url: "https://github.com/antipax/gen_state_machine",
      docs: [
        main: "GenStateMachine",
        extras: ["README.md"],

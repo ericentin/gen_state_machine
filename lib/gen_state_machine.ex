@@ -53,6 +53,41 @@ defmodule GenStateMachine do
 
   Every time you do a `call/3` or a `cast/2`, the message will be handled by
   `handle_event/4`.
+
+  We can also use the `:state_functions` callback mode instead of the default,
+  which is `:handle_event_function`:
+
+      defmodule Switch do
+        use GenStateMachine, callback_mode: :state_functions
+
+        def off(:cast, :flip, data) do
+          {:next_state, :on, data + 1}
+        end
+        def off(event_type, event_content, data) do
+          handle_event(event_type, event_content, data)
+        end
+
+        def on(:cast, :flip, data) do
+          {:next_state, :off, data}
+        end
+        def on(event_type, event_content, data) do
+          handle_event(event_type, event_content, data)
+        end
+
+        def handle_event({:call, from}, :get_count, data) do
+          {:keep_state_and_data, [{:reply, from, data}]}
+        end
+      end
+
+      # Start the server
+      {:ok, pid} = GenStateMachine.start_link(Switch, {:off, 0})
+
+      # This is the client
+      GenStateMachine.cast(pid, :flip)
+      #=> :ok
+
+      GenStateMachine.call(pid, :get_count)
+      #=> 1
   """
 
   @type state :: state_name | term
