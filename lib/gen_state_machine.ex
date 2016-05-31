@@ -43,10 +43,98 @@ defmodule GenStateMachine do
 
       GenStateMachine.call(pid, :get_count)
       #=> 1
+
+  We start our `Switch` by calling `start_link/3`, passing the module with the
+  server implmentation and its initial argument (a tuple where the first element
+  is the initial state and the second is the initial data). We can primarily
+  interact with the state machine by sending two types of messages. **call**
+  messages expect a reply from the server (and are therefore synchronous) while
+  **cast** messages do not.
+
+  Every time you do a `call/3` or a `cast/2`, the message will be handled by
+  `handle_event/4`.
   """
 
+  @type state :: state_name | term
+
+  @type state_name :: atom
+
+  @type data :: term
+
+  @type event_type ::
+    {:call, GenServer.from} |
+    :cast |
+    :info |
+    :timeout |
+    :internal
+
+  @type callback_mode :: :state_functions | :handle_event_function
+
+  @type postpone :: boolean
+
+  @type hibernate :: boolean
+
+  @type event_timeout :: timeout
+
+  @type reply_action :: {:reply, GenServer.from, term}
+
+  @type reply_actions :: [reply_action] | reply_action
+
+  @type event_content :: term
+
+  @type action ::
+    :postpone |
+    {:postpone, postpone} |
+    :hibernate |
+    {:hibernate, hibernate} |
+    event_timeout |
+    {:timeout, event_timeout, event_content} |
+    reply_action |
+    {:next_event, event_type, event_content}
+
+  @type actions :: [action] | action
+
+  @type state_function_result ::
+    {:next_state, state_name, data} |
+    {:next_state, state_name, data, actions} |
+    common_state_callback_result
+
+  @type handle_event_result ::
+    {:next_state, state, data} |
+    {:next_state, state, data, actions} |
+    common_state_callback_result
+
+  @type common_state_callback_result ::
+    :stop |
+    {:stop, reason :: term} |
+    {:stop, reason :: term, data} |
+    {:stop_and_reply, reason :: term, reply_actions} |
+    {:stop_and_reply, reason :: term, reply_actions, data} |
+    {:keep_state, data} |
+    {:keep_state, data, actions} |
+    :keep_state_and_data |
+    {:keep_state_and_data, actions}
+
   @callback init(args :: term) ::
-    :ok
+    {:ok, state, data} |
+    {:ok, state, data, actions} |
+    {:stop, reason :: term} |
+    :ignore
+
+  @callback state_name(event_type, event_content, data) :: state_function_result
+
+  @callback handle_event(event_type, event_content, state, data) :: handle_event_result
+
+  @callback terminate(reason :: term, state, data) :: any
+
+  @callback code_change(term | {:down, term}, state, data, extra :: term) ::
+    {:ok, state, data} |
+    {callback_mode, state, data} |
+    reason :: term
+
+  @callback format_status(:normal | :terminate, pdict_state_and_data :: list) :: term
+
+  @optional_callbacks state_name: 3, handle_event: 4, format_status: 2
 
   @doc false
   defmacro __using__(args) do
@@ -116,38 +204,63 @@ defmodule GenStateMachine do
     end
   end
 
+  @spec start_link(module, any, GenServer.options) :: GenServer.on_start
   def start_link(module, args, options \\ []) do
-    if options[:name] do
-      :gen_statem.start_link(options[:name], module, args, options)
+    name = options[:name]
+
+    if name do
+      name =
+        if is_atom(name) do
+          {:local, name}
+        else
+          name
+        end
+
+      :gen_statem.start_link(name, module, args, options)
     else
       :gen_statem.start_link(module, args, options)
     end
   end
 
+  @spec start(module, any, GenServer.options) :: GenServer.on_start
   def start(module, args, options \\ []) do
-    if options[:name] do
-      :gen_statem.start(options[:name], module, args, options)
+    name = options[:name]
+
+    if name do
+      name =
+        if is_atom(name) do
+          {:local, name}
+        else
+          name
+        end
+
+      :gen_statem.start(name, module, args, options)
     else
       :gen_statem.start(module, args, options)
     end
   end
 
+  @spec stop(GenServer.server, reason :: term, timeout) :: :ok
   def stop(server, reason \\ :normal, timeout \\ :infinity) do
     :gen_statem.stop(server, reason, timeout)
   end
 
+  @spec call(GenServer.server, term, timeout) :: term
   def call(server, request, timeout \\ :infinity) do
     :gen_statem.call(server, request, timeout)
   end
 
+  @spec cast(GenServer.server, term) :: :ok
   def cast(server, request) do
     :gen_statem.cast(server, request)
   end
 
+  @spec reply([reply_action]) :: :ok
   def reply(replies) do
     :gen_statem.reply(replies)
   end
 
+  @spec reply(GenServer.from, term) :: :ok
   def reply(client, reply) do
     :gen_statem.reply(client, reply)
   end
