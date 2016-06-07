@@ -203,9 +203,10 @@ defmodule GenStateMachine do
   The goal of a `GenStateMachine` is to abstract the "receive" loop for
   developers, automatically handling system messages, support code change,
   synchronous calls and more. Therefore, you should never call your own
-  "receive" inside the GenServer callbacks as doing so will cause the GenServer
-  to misbehave. If you want to receive custom messages, they will be delivered
-  to the usual handler for your callback mode with event_type `:info`.
+  "receive" inside the `GenStateMachine` callbacks as doing so will cause the
+  `GenStateMachine` to misbehave. If you want to receive custom messages, they
+  will be delivered to the usual handler for your callback mode with event_type
+  `:info`.
 
   ## Learn more
 
@@ -618,6 +619,49 @@ defmodule GenStateMachine do
     end
   end
 
+  @doc """
+  Starts a `GenStateMachine` process linked to the current process.
+
+  This is often used to start the `GenStateMachine` as part of a supervision
+  tree.
+
+  Once the server is started, the `init/1` function of the given `module` is
+  called with `args` as its arguments to initialize the server. To ensure a
+  synchronized start-up procedure, this function does not return until `init/1`
+  has returned.
+
+  Note that a `GenStateMachine` started with `start_link/3` is linked to the
+  parent process and will exit in case of crashes from the parent. The
+  `GenStateMachine` will also exit due to the `:normal` reasons in case it is
+  configured to trap exits in the `init/1` callback.
+
+  ## Options
+
+    * `:name` - used for name registration as described in the "Name
+      registration" section of the module documentation
+
+    * `:timeout` - if present, the server is allowed to spend the given amount of
+      milliseconds initializing or it will be terminated and the start function
+      will return `{:error, :timeout}`
+
+    * `:debug` - if present, the corresponding function in the [`:sys`
+      module](http://www.erlang.org/doc/man/sys.html) is invoked
+
+    * `:spawn_opt` - if present, its value is passed as options to the
+      underlying process as in `Process.spawn/4`
+
+  ## Return values
+
+  If the server is successfully created and initialized, this function returns
+  `{:ok, pid}`, where `pid` is the pid of the server. If a process with the
+  specified server name already exists, this function returns
+  `{:error, {:already_started, pid}}` with the pid of that process.
+
+  If the `init/1` callback fails with `reason`, this function returns
+  `{:error, reason}`. Otherwise, if it returns `{:stop, reason}`
+  or `:ignore`, the process is terminated and this function returns
+  `{:error, reason}` or `:ignore`, respectively.
+  """
   @spec start_link(module, any, GenServer.options) :: GenServer.on_start
   def start_link(module, args, options \\ []) do
     name = options[:name]
@@ -636,6 +680,12 @@ defmodule GenStateMachine do
     end
   end
 
+  @doc """
+  Starts a `GenStateMachine` process without links (outside of a supervision
+  tree).
+
+  See `start_link/3` for more information.
+  """
   @spec start(module, any, GenServer.options) :: GenServer.on_start
   def start(module, args, options \\ []) do
     name = options[:name]
@@ -654,26 +704,108 @@ defmodule GenStateMachine do
     end
   end
 
+  @doc """
+  Stops the server with the given `reason`.
+
+  The `terminate/2` callback of the given `server` will be invoked before
+  exiting. This function returns `:ok` if the server terminates with the
+  given reason; if it terminates with another reason, the call exits.
+
+  This function keeps OTP semantics regarding error reporting.
+  If the reason is any other than `:normal`, `:shutdown` or
+  `{:shutdown, _}`, an error report is logged.
+  """
   @spec stop(GenServer.server, reason :: term, timeout) :: :ok
   def stop(server, reason \\ :normal, timeout \\ :infinity) do
     :gen_statem.stop(server, reason, timeout)
   end
 
+  @doc """
+  Makes a synchronous call to the `server` and waits for its reply.
+
+  The client sends the given `request` to the server and waits until a reply
+  arrives or a timeout occurs. The appropriate state function will be called on
+  the server to handle the request.
+
+  `server` can be any of the values described in the "Name registration"
+  section of the documentation for this module.
+
+  ## Timeouts
+
+  `timeout` is an integer greater than zero which specifies how many
+  milliseconds to wait for a reply, or the atom `:infinity` to wait
+  indefinitely. The default value is `:infinity`. If no reply is received within
+  the specified time, the function call fails and the caller exits.
+
+  If the caller catches an exit, to avoid getting a late reply in the caller's
+  inbox, this function spawns a proxy process that does the call. A late reply
+  gets delivered to the dead proxy process, and hence gets discarded. This is
+  less efficient than using `:infinity` as a timeout.
+  """
   @spec call(GenServer.server, term, timeout) :: term
   def call(server, request, timeout \\ :infinity) do
     :gen_statem.call(server, request, timeout)
   end
 
+  @doc """
+  Sends an asynchronous request to the `server`.
+
+  This function always returns `:ok` regardless of whether
+  the destination `server` (or node) exists. Therefore it
+  is unknown whether the destination `server` successfully
+  handled the message.
+
+  The appropriate state function will be called on the server to handle
+  the request.
+  """
   @spec cast(GenServer.server, term) :: :ok
   def cast(server, request) do
     :gen_statem.cast(server, request)
   end
 
+  @doc """
+  Sends replies to clients.
+
+  Can be used to explicitly send replies to multiple clients.
+
+  This function always returns `:ok`.
+
+  See `reply/2` for more information.
+  """
   @spec reply([reply_action]) :: :ok
   def reply(replies) do
     :gen_statem.reply(replies)
   end
 
+  @doc """
+  Replies to a client.
+
+  This function can be used to explicitly send a reply to a client that called
+  `call/3 when the reply cannot be specified in the return value of a state
+  function.
+
+  `client` must be the `from` element of the event type accepted by state
+  functions. `reply` is an arbitrary term which will be given
+  back to the client as the return value of the call.
+
+  Note that `reply/2` can be called from any process, not just the one
+  that originally received the call (as long as that process communicated the
+  `from` argument somehow).
+
+  This function always returns `:ok`.
+
+  ## Examples
+
+      def handle_event({:call, from}, :reply_in_one_second, state, data) do
+        Process.send_after(self(), {:reply, from}, 1_000)
+        :keep_state_and_data
+      end
+
+      def handle_event(:info, {:reply, from}, state, data) do
+        GenStateMachine.reply(from, :one_second_has_passed)
+      end
+
+  """
   @spec reply(GenServer.from, term) :: :ok
   def reply(client, reply) do
     :gen_statem.reply(client, reply)
