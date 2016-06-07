@@ -264,7 +264,7 @@ defmodule GenStateMachine do
   @type callback_mode :: :state_functions | :handle_event_function
 
   @typedoc """
-  If `true` postpone the current event and retry it when the state changes.
+  If `true`, postpone the current event and retry it when the state changes.
 
   The state is considered to have changed when `state != next_state`.
   """
@@ -285,12 +285,12 @@ defmodule GenStateMachine do
   If another event arrives in the meantime, this timeout is cancelled. Note that
   a retried or inserted event counts just like a new one in this respect.
 
-  If the value is infinity no timer is started since it will never trigger
+  If the value is `:infinity` no timer is started since it will never trigger
   anyway.
 
-  If the value is 0 the timeout event is immediately enqueued unless there
+  If the value is `0` the timeout event is immediately enqueued unless there
   already are enqueued events since then the timeout is immediately cancelled.
-  This is a feature ensuring that a timeout 0 event will be processed before any
+  This is a feature ensuring that a timeout `0` event will be processed before any
   not yet received external event.
 
   Note that it is not possible nor needed to cancel this timeout since it is
@@ -299,12 +299,16 @@ defmodule GenStateMachine do
   @type event_timeout :: timeout
 
   @typedoc """
-  Reply to a caller waiting for a reply. `from` is the second element of
-  `{:call, from}`, which is recieved as the event_type argument to a state
-  function.
+  Reply to a caller waiting for a reply.
+
+  `from` is the second element of `{:call, from}`, which is recieved as the
+  event_type argument to a state function.
   """
   @type reply_action :: {:reply, from :: GenServer.from, reply :: term}
 
+  @typedoc """
+  A list of, or single, `reply_action`
+  """
   @type reply_actions :: [reply_action] | reply_action
 
   @typedoc """
@@ -339,6 +343,9 @@ defmodule GenStateMachine do
     reply_action |
     {:next_event, event_type, event_content}
 
+  @typedoc """
+  A list of, or single, `action`
+  """
   @type actions :: [action] | action
 
   @typedoc """
@@ -354,7 +361,7 @@ defmodule GenStateMachine do
     common_state_callback_result
 
   @typedoc """
-  `handle_event` return values in `:handle_event_function` callback mode.
+  `handle_event/4` return values in `:handle_event_function` callback mode.
 
   `:next_state` will cause the `GenStateMachine` to transition to state
   `state` (which may be the same as the current state), set new `data`, and
@@ -431,18 +438,19 @@ defmodule GenStateMachine do
 
   @doc """
   Whenever a `GenStateMachine` in callback mode `:state_functions` receives a
-  call, cast, or normal process message, a state function is called. This spec
-  exists to document the callback, but in actual use the name of the function
-  is probably not going to be state_name. Instead, there will be at least one
-  state function named after each state you wish to handle. See the Examples
-  section above for more info.
+  call, cast, or normal process message, a state function is called.
+
+  This spec exists to document the callback, but in actual use the name of the
+  function is probably not going to be state_name. Instead, there will be at
+  least one state function named after each state you wish to handle. See the
+  Examples section above for more info.
 
   These functions can optionally throw a result to return it.
   """
   @callback state_name(event_type, event_content, data) :: state_function_result
 
   @doc """
-  Whenever a `GenStateMachine` is in callback mode `:handle_event_function` (the
+  Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
   default) receives a call, cast, or normal process messsage, this callback will
   be invoked.
 
@@ -492,7 +500,7 @@ defmodule GenStateMachine do
 
   @doc """
   Invoked to change the state of the `GenStateMachine` when a different version
-  of a module is loaded (hot code swapping) and the state or data's term
+  of a module is loaded (hot code swapping) and the state and/or data's term
   structure should be changed.
 
   `old_vsn` is the previous version of the module (defined by the `@vsn`
@@ -545,7 +553,7 @@ defmodule GenStateMachine do
 
   This function can optionally throw a result to return it.
   """
-  @callback format_status(:normal | :terminate, pdict_state_and_data :: list) :: term
+  @callback format_status(reason :: :normal | :terminate, pdict_state_and_data :: list) :: term
 
   @optional_callbacks state_name: 3, handle_event: 4, format_status: 2
 
