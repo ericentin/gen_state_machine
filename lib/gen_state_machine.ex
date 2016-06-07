@@ -8,11 +8,11 @@ defmodule GenStateMachine do
 
   ## Example
 
-  The GenStateMachine behaviour abstracts the state machine. Developers are only
+  The `GenStateMachine` behaviour abstracts the state machine. Developers are only
   required to implement the callbacks and functionality they are interested in.
 
   Let's start with a code example and then explore the available callbacks.
-  Imagine we want a GenStateMachine that works like a switch, allowing us to
+  Imagine we want a `GenStateMachine` that works like a switch, allowing us to
   turn it on and off, as well as see how many times the switch has been turned
   on:
 
@@ -116,13 +116,13 @@ defmodule GenStateMachine do
   under a given name on start via the `:name` option. Registered names are also
   automatically cleaned up on termination. The supported values are:
 
-    * an atom - the GenStateMachine is registered locally with the given name
+    * an atom - the `GenStateMachine` is registered locally with the given name
       using `Process.register/2`.
 
-    * `{:global, term}`- the GenStateMachine is registered globally with the
+    * `{:global, term}`- the `GenStateMachine` is registered globally with the
       given term using the functions in the `:global` module.
 
-    * `{:via, module, term}` - the GenStateMachine is registered with the given
+    * `{:via, module, term}` - the `GenStateMachine` is registered with the given
       mechanism and name. The `:via` option expects a module that exports
       `register_name/2`, `unregister_name/1`, `whereis_name/1` and `send/2`.
       One such example is the `:global` module which uses these functions
@@ -343,7 +343,7 @@ defmodule GenStateMachine do
   @typedoc """
   State function return values in `:state_functions` callback mode.
 
-  `:next_state` will cause the GenStateMachine to transition to state
+  `:next_state` will cause the `GenStateMachine` to transition to state
   `state_name` (which may be the same as the current state), set new `data`, and
   perform any `actions`.
   """
@@ -355,7 +355,7 @@ defmodule GenStateMachine do
   @typedoc """
   `handle_event` return values in `:handle_event_function` callback mode.
 
-  `:next_state` will cause the GenStateMachine to transition to state
+  `:next_state` will cause the `GenStateMachine` to transition to state
   `state` (which may be the same as the current state), set new `data`, and
   perform any `actions`.
   """
@@ -367,7 +367,7 @@ defmodule GenStateMachine do
   @typedoc """
   Return values for state functions in all callback modes.
 
-  `:stop` will terminate the GenStateMachine with `reason` and set `data`.
+  `:stop` will terminate the `GenStateMachine` with `reason` and set `data`.
 
   `:stop_and_reply` will send all `reply_actions` before terminating with
   `reason` and set `data`.
@@ -419,6 +419,8 @@ defmodule GenStateMachine do
   Returning `{:stop, reason}` will cause `start_link/3` to return
   `{:error, reason}` and the process to exit with reason `reason` without
   entering the loop or calling `terminate/2`.
+
+  This function can optionally throw a result to return it.
   """
   @callback init(args :: term) ::
     {:ok, state, data} |
@@ -426,17 +428,122 @@ defmodule GenStateMachine do
     {:stop, reason :: term} |
     :ignore
 
+  @doc """
+  Whenever a `GenStateMachine` in callback mode `:state_functions` receives a
+  call, cast, or normal process message, a state function is called. This spec
+  exists to document the callback, but in actual use the name of the function
+  is probably not going to be state_name. Instead, there will be at least one
+  state function named after each state you wish to handle. See the Examples
+  section above for more info.
+
+  These functions can optionally throw a result to return it.
+  """
   @callback state_name(event_type, event_content, data) :: state_function_result
 
+  @doc """
+  Whenever a `GenStateMachine` is in callback mode `:handle_event_function` (the
+  default) receives a call, cast, or normal process messsage, this callback will
+  be invoked.
+
+  This function can optionally throw a result to return it.
+  """
   @callback handle_event(event_type, event_content, state, data) :: handle_event_result
 
+  @doc """
+  Invoked when the server is about to exit. It should do any cleanup required.
+
+  `reason` is exit reason, `state` is the current state, and `data` is the
+  current data of the `GenStateMachine`. The return value is ignored.
+
+  `terminate/2` is called if a callback (except `init/1`) returns a `:stop`
+  tuple, raises, calls `Kernel.exit/1` or returns an invalid value. It may also
+  be called if the `GenStateMachine` traps exits using `Process.flag/2` *and*
+  the parent process sends an exit signal.
+
+  If part of a supervision tree a `GenStateMachine`'s `Supervisor` will send an
+  exit signal when shutting it down. The exit signal is based on the shutdown
+  strategy in the child's specification. If it is `:brutal_kill` the
+  `GenStateMachine` is killed and so `terminate/2` is not called. However if it
+  is a timeout the `Supervisor` will send the exit signal `:shutdown` and the
+  `GenStateMachine` will have the duration of the timeout to call `terminate/2`
+  - if the process is still alive after the timeout it is killed.
+
+  If the `GenStateMachine` receives an exit signal (that is not `:normal`) from
+  any process when it is not trapping exits it will exit abruptly with the same
+  reason and so not call `terminate/2`. Note that a process does *NOT* trap
+  exits by default and an exit signal is sent when a linked process exits or its
+  node is disconnected.
+
+  Therefore it is not guaranteed that `terminate/2` is called when a
+  `GenStateMachine` exits. For such reasons, we usually recommend important
+  clean-up rules to happen in separated processes either by use of monitoring or
+  by links themselves. For example if the `GenStateMachine` controls a `port`
+  (e.g. `:gen_tcp.socket`) or `File.io_device`, they will be closed on receiving
+  a `GenStateMachine`'s exit signal and do not need to be closed in
+  `terminate/2`.
+
+  If `reason` is not `:normal`, `:shutdown` nor `{:shutdown, term}` an error is
+  logged.
+
+  This function can optionally throw a result, which is ignored.
+  """
   @callback terminate(reason :: term, state, data) :: any
 
-  @callback code_change(term | {:down, term}, state, data, extra :: term) ::
+  @doc """
+  Invoked to change the state of the `GenStateMachine` when a different version
+  of a module is loaded (hot code swapping) and the state or data's term
+  structure should be changed.
+
+  `old_vsn` is the previous version of the module (defined by the `@vsn`
+  attribute) when upgrading. When downgrading the previous version is wrapped in
+  a 2-tuple with first element `:down`. `state` is the current state of the
+  `GenStateMachine`, `data` is the current data, and `extra` is any extra data
+  required to change the state.
+
+  Returning `{:ok, new_state, new_data}` changes the state to `new_state`, the
+  data to `new_data`, and the code change is successful.
+
+  If you wish to change the callback mode as part of an upgrade/downgrade, you
+  may return `{callback_mode, new_state, new_data}`. It is important to note
+  however that for a downgrade the argument `extra` must contain the previous
+  callback mode (or some other data source).
+
+  Returning `reason` fails the code change with reason `reason` and the state
+  and data remains the same.
+
+  If `code_change/4` raises the code change fails and the loop will continue
+  with its previous state. Therefore this callback does not usually contain side
+  effects.
+
+  This function can optionally throw a result to return it.
+  """
+  @callback code_change(old_vsn :: term | {:down, term}, state, data, extra :: term) ::
     {:ok, state, data} |
     {callback_mode, state, data} |
     reason :: term
 
+  @doc """
+  Invoked in some cases to retrieve a formatted version of the `GenStateMachine`
+  status.
+
+  This callback can be useful to control the *appearance* of the status of the
+  `GenStateMachine`. For example, it can be used to return a compact
+  representation of the `GenStateMachines`'s state/data to avoid having large
+  terms printed.
+
+    * one of `:sys.get_status/1` or `:sys.get_status/2` is invoked to get the
+      status of the `GenStateMachine`; in such cases, `reason` is `:normal`
+
+    * the `GenStateMachine` terminates abnormally and logs an error; in such cases,
+      `reason` is `:terminate`
+
+  `pdict_state_and_data` is a three-element list `[pdict, state, data]` where
+  `pdict` is a list of `{key, value}` tuples representing the current process
+  dictionary of the `GenStateMachine`, `state` is the current state of the
+  `GenStateMachine`, and `data` is the current data.
+
+  This function can optionally throw a result to return it.
+  """
   @callback format_status(:normal | :terminate, pdict_state_and_data :: list) :: term
 
   @optional_callbacks state_name: 3, handle_event: 4, format_status: 2
