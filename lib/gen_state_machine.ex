@@ -216,33 +216,118 @@ defmodule GenStateMachine do
     * [gen_statem Behaviour – OTP Design Principles](http://erlang.org/documentation/doc-8.0-rc1/doc/design_principles/statem.html)
   """
 
+  @typedoc """
+  The term representing the current state.
+
+  In `:handle_event_function` callback mode, any term.
+
+  In `:state_functions` callback mode, an atom.
+  """
   @type state :: state_name | term
 
+  @typedoc """
+  The atom representing the current state in `:state_functions` callback mode.
+  """
   @type state_name :: atom
 
+  @typedoc """
+  The persistent data (similar to a GenServer's `state`) for the GenStateMachine.
+  """
   @type data :: term
 
+  @typedoc """
+  The source of the current event.
+
+  `{:call, from}` will be received as a result of a call.
+
+  `:cast` will be received as a result of a cast.
+
+  `:info` will be received as a result of any regular process messages received.
+
+  `:timeout` will be received as a result of a `:timeout` action.
+
+  `:internal` will be received as a result of a `:next_event` action.
+  """
   @type event_type ::
-    {:call, GenServer.from} |
+    {:call, from :: GenServer.from} |
     :cast |
     :info |
     :timeout |
     :internal
 
+  @typedoc """
+  The callback mode for the GenStateMachine.
+
+  See the Example section above for more info.
+  """
   @type callback_mode :: :state_functions | :handle_event_function
 
+  @typedoc """
+  If `true` postpone the current event and retry it when the state changes.
+
+  The state is considered to have changed when `state != next_state`.
+  """
   @type postpone :: boolean
 
+  @typedoc """
+  If `true`, hibernate the GenStateMachine.
+
+  If there are enqueued events, to prevent receiving any new event, a garbage
+  collection is done instead to simulate that the gen_statem entered hibernation
+  and immediately got awakened by the oldest enqueued event.
+  """
   @type hibernate :: boolean
 
+  @typedoc """
+  Generate an event of type `:timeout` after this time in milliseconds.
+
+  If another event arrives in the meantime, this timeout is cancelled. Note that
+  a retried or inserted event counts just like a new one in this respect.
+
+  If the value is infinity no timer is started since it will never trigger
+  anyway.
+
+  If the value is 0 the timeout event is immediately enqueued unless there
+  already are enqueued events since then the timeout is immediately cancelled.
+  This is a feature ensuring that a timeout 0 event will be processed before any
+  not yet received external event.
+
+  Note that it is not possible nor needed to cancel this timeout since it is
+  cancelled automatically by any other event.
+  """
   @type event_timeout :: timeout
 
-  @type reply_action :: {:reply, GenServer.from, term}
+  @typedoc """
+  Reply to a caller waiting for a reply. `from` is the second element of
+  `{:call, from}`, which is recieved as the event_type argument to a state
+  function.
+  """
+  @type reply_action :: {:reply, from :: GenServer.from, reply :: term}
 
   @type reply_actions :: [reply_action] | reply_action
 
+  @typedoc """
+  The message content received as the result of an event.
+  """
   @type event_content :: term
 
+  @typedoc """
+  State transition actions.
+
+  They may be invoked by returning them from a state function or init/1.
+
+  If present in a list of actions, they are executed in order, and any that set
+  transition options (postpone, hibernate, and timeout) override any previously
+  provided options of the same type.
+
+  If the state changes, the queue of incoming events is reset to start with the
+  oldest postponed.
+
+  All events added as a result of a `:next_event` action are inserted in the
+  queue to be processed before all other events. An event of type `:internal`
+  should be used when you want to reliably distinguish an event inserted this
+  way from an external event.
+  """
   @type action ::
     :postpone |
     {:postpone, postpone} |
@@ -255,16 +340,44 @@ defmodule GenStateMachine do
 
   @type actions :: [action] | action
 
+  @typedoc """
+  State function return values in `:state_functions` callback mode.
+
+  `:next_state` will cause the GenStateMachine to transition to state
+  `state_name` (which may be the same as the current state), set new `data`, and
+  perform any `actions`.
+  """
   @type state_function_result ::
     {:next_state, state_name, data} |
     {:next_state, state_name, data, actions} |
     common_state_callback_result
 
+  @typedoc """
+  `handle_event` return values in `:handle_event_function` callback mode.
+
+  `:next_state` will cause the GenStateMachine to transition to state
+  `state` (which may be the same as the current state), set new `data`, and
+  perform any `actions`.
+  """
   @type handle_event_result ::
     {:next_state, state, data} |
     {:next_state, state, data, actions} |
     common_state_callback_result
 
+  @typedoc """
+  Return values for state functions in all callback modes.
+
+  `:stop` will terminate the GenStateMachine with `reason` and set `data`.
+
+  `:stop_and_reply` will send all `reply_actions` before terminating with
+  `reason` and set `data`.
+
+  `:keep_state` will keep the current state, set `data`, and execute any
+  `actions`.
+
+  `:keep_state_and_data` will keep the current state and data, and execute any
+  `actions`.
+  """
   @type common_state_callback_result ::
     :stop |
     {:stop, reason :: term} |
@@ -276,6 +389,37 @@ defmodule GenStateMachine do
     :keep_state_and_data |
     {:keep_state_and_data, actions}
 
+  @doc """
+  Invoked when the server is started. `start_link/3` (or `start/3`) will
+  block until it returns.
+
+  `args` is the argument term (second argument) passed to `start_link/3`.
+
+  Returning `{:ok, state, data}` will cause `start_link/3` to return
+  `{:ok, pid}` and the process to enter its loop.
+
+  Returning `{:ok, state, data, actions}` is similar to `{:ok, state}`
+  except the provided actions will be executed.
+
+  Returning `:ignore` will cause `start_link/3` to return `:ignore` and the
+  process will exit normally without entering the loop or calling `terminate/2`.
+  If used when part of a supervision tree the parent supervisor will not fail
+  to start nor immediately try to restart the `GenStateMachine`. The remainder
+  of the supervision tree will be (re)started and so the `GenStateMachine`
+  should not be required by other processes. It can be started later with
+  `Supervisor.restart_child/2` as the child specification is saved in the parent
+  supervisor. The main use cases for this are:
+
+    * The `GenStateMachine` is disabled by configuration but might be enabled
+      later.
+    * An error occurred and it will be handled by a different mechanism than the
+     `Supervisor`. Likely this approach involves calling
+     `Supervisor.restart_child/2` after a delay to attempt a restart.
+
+  Returning `{:stop, reason}` will cause `start_link/3` to return
+  `{:error, reason}` and the process to exit with reason `reason` without
+  entering the loop or calling `terminate/2`.
+  """
   @callback init(args :: term) ::
     {:ok, state, data} |
     {:ok, state, data, actions} |
