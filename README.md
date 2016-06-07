@@ -2,9 +2,9 @@
 
 An idiomatic Elixir wrapper for `gen_statem` in OTP 19 (and above).
 
-Full documentation is available [here](https://hexdocs.pm/gen_state_machine).
+**Full documentation is available [here](https://hexdocs.pm/gen_state_machine).**
 
-You can find the package on Hex [here](https://hex.pm/packages/gen_state_machine).
+**You can find the package on Hex [here](https://hex.pm/packages/gen_state_machine).**
 
 One important difference between `gen_statem` and this wrapper is that you
 declare your callback mode as part of `use GenStateMachine` in this wrapper,
