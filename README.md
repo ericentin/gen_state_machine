@@ -38,3 +38,8 @@ added to `Logger`.
       [applications: [:gen_state_machine]]
     end
     ```
+
+## Special Thanks
+
+I would like to give special thanks to @fishcakez and @michalmuskala, who both
+provided invaluable feedback on this library!
