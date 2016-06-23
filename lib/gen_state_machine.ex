@@ -609,6 +609,8 @@ defmodule GenStateMachine do
       @doc false
       def init(args) do
         case super(args) do
+          {:handle_event_function, _, _} = return -> {:stop, {:bad_return_value, return}}
+          {:state_functions, _, _} = return -> {:stop, {:bad_return_value, return}}
           {:ok, state, data} -> {@gen_statem_callback_mode, state, data}
           {:ok, state, data, actions} -> {@gen_statem_callback_mode, state, data, actions}
           other -> other
