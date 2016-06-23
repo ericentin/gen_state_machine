@@ -514,8 +514,9 @@ defmodule GenStateMachine do
 
   If you wish to change the callback mode as part of an upgrade/downgrade, you
   may return `{callback_mode, new_state, new_data}`. It is important to note
-  however that for a downgrade the argument `extra` must contain the previous
-  callback mode (or some other data source).
+  however that for a downgrade you must use the argument `extra`,
+  `{:down, vsn}` from the argument `old_vsn`, or some other data source to
+  determine what the previous callback mode was.
 
   Returning `reason` fails the code change with reason `reason` and the state
   and data remains the same.
@@ -526,7 +527,7 @@ defmodule GenStateMachine do
 
   This function can optionally throw a result to return it.
   """
-  @callback code_change(old_vsn :: term | {:down, term}, state, data, extra :: term) ::
+  @callback code_change(old_vsn :: term | {:down, vsn :: term}, state, data, extra :: term) ::
     {:ok, state, data} |
     {callback_mode, state, data} |
     reason :: term
