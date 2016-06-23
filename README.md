@@ -27,7 +27,7 @@ added to `Logger`.
 
     ```elixir
     def deps do
-      [{:gen_state_machine, "~> 0.1.0"}]
+      [{:gen_state_machine, "~> 1.0.0"}]
     end
     ```
 
