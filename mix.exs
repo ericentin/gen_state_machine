@@ -38,7 +38,7 @@ defmodule GenStateMachine.Mixfile do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.11.5", only: :dev}
+      {:ex_doc, "~> 0.12", only: :dev}
     ]
   end
 

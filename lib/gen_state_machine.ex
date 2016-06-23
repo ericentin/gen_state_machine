@@ -812,7 +812,7 @@ defmodule GenStateMachine do
   Replies to a client.
 
   This function can be used to explicitly send a reply to a client that called
-  `call/3 when the reply cannot be specified in the return value of a state
+  `call/3` when the reply cannot be specified in the return value of a state
   function.
 
   `client` must be the `from` element of the event type accepted by state
