@@ -110,6 +110,12 @@ defmodule GenStateMachine do
   leaving it up to you to implement the ones you want to customize, as well as
   `state_name/3` functions named the same as the states you wish to support.
 
+  It is important to note that the default implementation of the `code_change/4`
+  callback results in an `:undefined` error. This is because `code_change/4` is
+  related to the quite difficult topic of hot upgrades, and if you need it, you
+  should really be implementing it yourself. In normal use this callback will
+  not be invoked.
+
   ## Name Registration
 
   Both `start_link/3` and `start/3` support registering the `GenStateMachine`
@@ -586,7 +592,7 @@ defmodule GenStateMachine do
 
       @doc false
       def code_change(_old_vsn, state, data, _extra) do
-        {:ok, state, data}
+        :undefined
       end
 
       overridable_funcs = [init: 1, terminate: 3, code_change: 4]
