@@ -12,7 +12,7 @@ end
 defmodule GenStateMachine.Mixfile do
   use Mix.Project
 
-  @version "0.0.2"
+  @version "0.1.0"
 
   def project do
     [app: :gen_state_machine,
@@ -29,6 +29,11 @@ defmodule GenStateMachine.Mixfile do
        extras: ["README.md"],
        source_ref: "v#{@version}"
      ]]
+  end
+
+  def application do
+    [applications: [:logger],
+     mod: {GenStateMachine.Application, []}]
   end
 
   defp deps do

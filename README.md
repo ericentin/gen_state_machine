@@ -15,13 +15,19 @@ Other than that (and the usual automatically-defined default callbacks as a
 result of `use`-ing `GenStateMachine`), this wrapper does not make any
 functional alterations.
 
+This wrapper also provides a OTP error translator for `Logger`, which is
+automatically added when the `:gen_state_machine` application is started.
+Optionally, you may add `:gen_state_machine` to `:included_applications` rather
+than `:applications` as indicated below if you do not want the translator to be
+added to `Logger`.
+
 ## Installation
 
   1. Add `gen_state_machine` to your list of dependencies in `mix.exs`:
 
     ```elixir
     def deps do
-      [{:gen_state_machine, "~> 0.0.2"}]
+      [{:gen_state_machine, "~> 0.1.0"}]
     end
     ```
 
