@@ -591,7 +591,7 @@ defmodule GenStateMachine do
       end
 
       @doc false
-      def code_change(_old_vsn, state, data, _extra) do
+      def code_change(_old_vsn, _state, _data, _extra) do
         :undefined
       end
 
@@ -599,7 +599,7 @@ defmodule GenStateMachine do
 
       overridable_funcs =
         if @gen_statem_callback_mode == :handle_event_function do
-          overridable_funcs = [handle_event: 4] ++ overridable_funcs
+          [handle_event: 4] ++ overridable_funcs
         else
           overridable_funcs
         end
@@ -615,7 +615,14 @@ defmodule GenStateMachine do
 
       @doc false
       def init(args) do
-        case super(args) do
+        result =
+          try do
+            super(args)
+          catch
+            thrown -> thrown
+          end
+
+        case result do
           {:handle_event_function, _, _} = return -> {:stop, {:bad_return_value, return}}
           {:state_functions, _, _} = return -> {:stop, {:bad_return_value, return}}
           {:ok, state, data} -> {@gen_statem_callback_mode, state, data}
@@ -626,7 +633,14 @@ defmodule GenStateMachine do
 
       @doc false
       def code_change(old_vsn, state, data, extra) do
-        case super(old_vsn, state, data, extra) do
+        result =
+          try do
+            super(old_vsn, state, data, extra)
+          catch
+            thrown -> thrown
+          end
+
+        case result do
           {:handle_event_function, state, data} -> {:handle_event_function, state, data}
           {:state_functions, state, data} -> {:state_functions, state, data}
           {:ok, state, data} -> {@gen_statem_callback_mode, state, data}

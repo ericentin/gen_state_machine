@@ -106,4 +106,21 @@ defmodule GenStateMachineTest do
     assert GenStateMachine.start(BadInit1, nil) == {:error, {:bad_return_value, {:handle_event_function, nil, nil}}}
     assert GenStateMachine.start(BadInit2, nil) == {:error, {:bad_return_value, {:state_functions, nil, nil}}}
   end
+
+  defmodule Thrower do
+    use GenStateMachine
+
+    def init(_args) do
+      throw {:ok, nil, nil}
+    end
+
+    def code_change(_old_vsn, state, data, _extra) do
+      throw {:ok, state, data}
+    end
+  end
+
+  test "re-overridden callbacks should support thrown values" do
+    assert Thrower.init(nil) == {:handle_event_function, nil, nil}
+    assert Thrower.code_change(nil, nil, nil, nil) == {:handle_event_function, nil, nil}
+  end
 end
