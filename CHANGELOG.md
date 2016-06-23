@@ -1,5 +1,9 @@
 # Changelog for v1.0
 
+## v1.0.1 (2016-06-23)
+
+Minor doc punctuation error fixed, and docs regenerated with latest `ex_doc` so that optional callbacks are notated.
+
 ## v1.0.0 (2016-06-23)
 
 ### Backwards incompatible changes
