@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/antipax/gen_state_machine.svg?branch=master)](https://travis-ci.org/antipax/gen_state_machine)
+
 # GenStateMachine
 
 An idiomatic Elixir wrapper for `gen_statem` in OTP 19 (and above).
