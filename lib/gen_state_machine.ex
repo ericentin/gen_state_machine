@@ -45,7 +45,7 @@ defmodule GenStateMachine do
       #=> 1
 
   We start our `Switch` by calling `start_link/3`, passing the module with the
-  server implmentation and its initial argument (a tuple where the first element
+  server implementation and its initial argument (a tuple where the first element
   is the initial state and the second is the initial data). We can primarily
   interact with the state machine by sending two types of messages. **call**
   messages expect a reply from the server (and are therefore synchronous) while
