@@ -90,7 +90,7 @@ defmodule GenStateMachine do
       #=> 1
 
   Again, we start our `Switch` by calling `start_link/3`, passing the module
-  with the server implmentation and its initial argument, and interacting with
+  with the server implementation and its initial argument, and interacting with
   it via **call** and **cast**.
 
   However, in `:state_functions` callback mode, every time you do a `call/3` or

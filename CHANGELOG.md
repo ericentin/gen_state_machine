@@ -1,5 +1,9 @@
 # Changelog for v1.0
 
+## v1.0.2 (2016-07-03)
+
+Documentation spelling error fixed. Compilation warnings fixed.
+
 ## v1.0.1 (2016-06-23)
 
 Minor doc punctuation error fixed, and docs regenerated with latest `ex_doc` so that optional callbacks are notated.
