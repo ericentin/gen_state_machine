@@ -20,7 +20,7 @@ defmodule GenStateMachineTest do
   test "start_link/2, call/2 and cast/2" do
     {:ok, pid} = GenStateMachine.start_link(EventFunctionSwitch, {:off, 0})
 
-    {:links, links} = Process.info(self, :links)
+    {:links, links} = Process.info(self(), :links)
     assert pid in links
 
     assert GenStateMachine.cast(pid, :flip) == :ok
@@ -58,7 +58,7 @@ defmodule GenStateMachineTest do
   test "start_link/2, call/2 and cast/2 for state_functions" do
     {:ok, pid} = GenStateMachine.start_link(StateFunctionsSwitch, {:off, 0})
 
-    {:links, links} = Process.info(self, :links)
+    {:links, links} = Process.info(self(), :links)
     assert pid in links
 
     assert GenStateMachine.cast(pid, :flip) == :ok
@@ -73,7 +73,7 @@ defmodule GenStateMachineTest do
 
   test "start/2" do
     {:ok, pid} = GenStateMachine.start(EventFunctionSwitch, {:off, 0})
-    {:links, links} = Process.info(self, :links)
+    {:links, links} = Process.info(self(), :links)
     refute pid in links
     GenStateMachine.stop(pid)
   end
