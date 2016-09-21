@@ -126,7 +126,8 @@ defmodule GenStateMachineTest do
       [major, minor] -> "#{major}.#{minor}.0"
       [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
     end
-    |> Version.parse!()
+    |> Version.parse()
+    |> elem(1)
     |> Version.match?(">= 3.1.0")
   )
 
