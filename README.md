@@ -11,7 +11,7 @@ An idiomatic Elixir wrapper for `gen_statem` in OTP 19 (and above).
 One important difference between `gen_statem` and this wrapper is that you
 declare your callback mode as part of `use GenStateMachine` in this wrapper,
 rather than returning it from `callback_mode/0` on OTP 19.1 and up, or your
-`init/1` and `code_change/4` on versions of OTP prior to 19.1. In version of
+`init/1` and `code_change/4` on versions of OTP prior to 19.1. In versions of
 OTP prior to 19.1, you can still, however, switch callback modes in
 `code_change/4` by returning a callback mode
 
