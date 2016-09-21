@@ -103,24 +103,49 @@ defmodule GenStateMachineTest do
   end
 
   test "init/1 should not allow callback mode in return" do
-    assert GenStateMachine.start(BadInit1, nil) == {:error, {:bad_return_value, {:handle_event_function, nil, nil}}}
-    assert GenStateMachine.start(BadInit2, nil) == {:error, {:bad_return_value, {:state_functions, nil, nil}}}
+    result = GenStateMachine.start(BadInit1, nil)
+    assert result in [
+      {:error, {:bad_return_value, {:handle_event_function, nil, nil}}},
+      {:error, {:bad_return_from_init, {:handle_event_function, nil, nil}}}
+    ]
+
+    result = GenStateMachine.start(BadInit2, nil)
+    assert result in [
+      {:error, {:bad_return_value, {:state_functions, nil, nil}}},
+      {:error, {:bad_return_from_init, {:state_functions, nil, nil}}}
+    ]
   end
 
-  defmodule Thrower do
-    use GenStateMachine
+  @gen_statem_callback_mode_callback (
+    Application.loaded_applications()
+    |> Enum.find_value(fn {app, _, vsn} -> app == :stdlib and vsn end)
+    |> to_string()
+    |> String.split(".")
+    |> case do
+      [major] -> "#{major}.0.0"
+      [major, minor] -> "#{major}.#{minor}.0"
+      [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
+    end
+    |> Version.parse!()
+    |> Version.match?(">= 3.1.0")
+  )
 
-    def init(_args) do
-      throw {:ok, nil, nil}
+  unless @gen_statem_callback_mode_callback do
+    defmodule Thrower do
+      use GenStateMachine
+
+      def init(_args) do
+        throw {:ok, nil, nil}
+      end
+
+      def code_change(_old_vsn, state, data, _extra) do
+        throw {:ok, state, data}
+      end
     end
 
-    def code_change(_old_vsn, state, data, _extra) do
-      throw {:ok, state, data}
+    test "re-overridden callbacks should support thrown values" do
+      assert Thrower.init(nil) == {:handle_event_function, nil, nil}
+      assert Thrower.code_change(nil, nil, nil, nil) == {:handle_event_function, nil, nil}
     end
-  end
-
-  test "re-overridden callbacks should support thrown values" do
-    assert Thrower.init(nil) == {:handle_event_function, nil, nil}
-    assert Thrower.code_change(nil, nil, nil, nil) == {:handle_event_function, nil, nil}
   end
 end

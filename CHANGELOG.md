@@ -1,4 +1,12 @@
-# Changelog for v1.0
+# Changelog
+
+## v2.0.0 (2016-09-21)
+
+Add support for OTP 19.1.
+
+### Backwards incompatible changes
+
+  * On OTP 19.1, if you returned a callback mode explicitly from `code_change/4`, you should now return `:ok` instead, which will use the configured callback mode.
 
 ## v1.0.2 (2016-07-03)
 

@@ -518,11 +518,12 @@ defmodule GenStateMachine do
   Returning `{:ok, new_state, new_data}` changes the state to `new_state`, the
   data to `new_data`, and the code change is successful.
 
-  If you wish to change the callback mode as part of an upgrade/downgrade, you
-  may return `{callback_mode, new_state, new_data}`. It is important to note
-  however that for a downgrade you must use the argument `extra`,
-  `{:down, vsn}` from the argument `old_vsn`, or some other data source to
-  determine what the previous callback mode was.
+  On OTP versions before 19.1, if you wish to change the callback mode as part
+  of an upgrade/downgrade, you may return
+  `{callback_mode, new_state, new_data}`. It is important to note however that
+  for a downgrade you must use the argument `extra`, `{:down, vsn}` from the
+  argument `old_vsn`, or some other data source to determine what the previous
+  callback mode was.
 
   Returning `reason` fails the code change with reason `reason` and the state
   and data remains the same.
@@ -564,18 +565,42 @@ defmodule GenStateMachine do
 
   @optional_callbacks state_name: 3, handle_event: 4, format_status: 2
 
+  @gen_statem_callback_mode_callback (
+    Application.loaded_applications()
+    |> Enum.find_value(fn {app, _, vsn} -> app == :stdlib and vsn end)
+    |> to_string()
+    |> String.split(".")
+    |> case do
+      [major] -> "#{major}.0.0"
+      [major, minor] -> "#{major}.#{minor}.0"
+      [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
+    end
+    |> Version.parse!()
+    |> Version.match?(">= 3.1.0")
+  )
+
   @doc false
   defmacro __using__(args) do
     callback_mode = Keyword.get(args, :callback_mode, :handle_event_function)
 
     quote location: :keep do
       @behaviour GenStateMachine
-      @before_compile GenStateMachine
+
+      unless unquote(@gen_statem_callback_mode_callback) do
+        @before_compile GenStateMachine
+      end
+
       @gen_statem_callback_mode unquote(callback_mode)
 
       @doc false
       def init({state, data}) do
         {:ok, state, data}
+      end
+
+      if unquote(@gen_statem_callback_mode_callback) do
+        def callback_mode do
+          @gen_statem_callback_mode
+        end
       end
 
       if @gen_statem_callback_mode == :handle_event_function do
