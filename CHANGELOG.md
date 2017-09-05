@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.1 (2017-09-05)
+
+Fix typespecs for OTP 20+.
+
 ## v2.0.0 (2016-09-21)
 
 Add support for OTP 19.1.
