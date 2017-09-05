@@ -17,7 +17,7 @@ defmodule GenStateMachine.Mixfile do
   def project do
     [app: :gen_state_machine,
      version: @version,
-     elixir: "~> 1.2.6 or ~> 1.3-rc",
+     elixir: "~> 1.3",
      build_embedded: Mix.env == :prod,
      start_permanent: Mix.env == :prod,
      deps: deps(),
