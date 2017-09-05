@@ -1,6 +1,6 @@
 defmodule GenStateMachine do
   @moduledoc """
-  A behaviour module for implementing a state machine.
+  A behaviour module for implementing a state machine.
 
   The advantage of using this module is that it will have a standard set of
   interface functions and include functionality for tracing and error reporting.
@@ -253,14 +253,15 @@ defmodule GenStateMachine do
 
   `:timeout` will be received as a result of a `:timeout` action.
 
+  `:state_timeout` will be received as a result of a `:state_timeout` action.
+
   `:internal` will be received as a result of a `:next_event` action.
+
+  See the erlang
+  [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_type)
+  for details.
   """
-  @type event_type ::
-    {:call, from :: GenServer.from} |
-    :cast |
-    :info |
-    :timeout |
-    :internal
+  @type event_type :: :gen_statem.event_type
 
   @typedoc """
   The callback mode for the GenStateMachine.
@@ -270,55 +271,7 @@ defmodule GenStateMachine do
   @type callback_mode :: :state_functions | :handle_event_function
 
   @typedoc """
-  If `true`, postpone the current event and retry it when the state changes.
-
-  The state is considered to have changed when `state != next_state`.
-  """
-  @type postpone :: boolean
-
-  @typedoc """
-  If `true`, hibernate the GenStateMachine.
-
-  If there are enqueued events, to prevent receiving any new event, a garbage
-  collection is done instead to simulate that the gen_statem entered hibernation
-  and immediately got awakened by the oldest enqueued event.
-  """
-  @type hibernate :: boolean
-
-  @typedoc """
-  Generate an event of type `:timeout` after this time in milliseconds.
-
-  If another event arrives in the meantime, this timeout is cancelled. Note that
-  a retried or inserted event counts just like a new one in this respect.
-
-  If the value is `:infinity` no timer is started since it will never trigger
-  anyway.
-
-  If the value is `0` the timeout event is immediately enqueued unless there
-  already are enqueued events since then the timeout is immediately cancelled.
-  This is a feature ensuring that a timeout `0` event will be processed before any
-  not yet received external event.
-
-  Note that it is not possible nor needed to cancel this timeout since it is
-  cancelled automatically by any other event.
-  """
-  @type event_timeout :: timeout
-
-  @typedoc """
-  Reply to a caller waiting for a reply.
-
-  `from` is the second element of `{:call, from}`, which is recieved as the
-  event_type argument to a state function.
-  """
-  @type reply_action :: {:reply, from :: GenServer.from, reply :: term}
-
-  @typedoc """
-  A list of, or single, `reply_action`
-  """
-  @type reply_actions :: [reply_action] | reply_action
-
-  @typedoc """
-  The message content received as the result of an event.
+  The message content received as the result of an event.
   """
   @type event_content :: term
 
@@ -338,70 +291,12 @@ defmodule GenStateMachine do
   queue to be processed before all other events. An event of type `:internal`
   should be used when you want to reliably distinguish an event inserted this
   way from an external event.
+
+  See the erlang
+  [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-action)
+  for the possible values.
   """
-  @type action ::
-    :postpone |
-    {:postpone, postpone} |
-    :hibernate |
-    {:hibernate, hibernate} |
-    event_timeout |
-    {:timeout, event_timeout, event_content} |
-    reply_action |
-    {:next_event, event_type, event_content}
-
-  @typedoc """
-  A list of, or single, `action`
-  """
-  @type actions :: [action] | action
-
-  @typedoc """
-  State function return values in `:state_functions` callback mode.
-
-  `:next_state` will cause the `GenStateMachine` to transition to state
-  `state_name` (which may be the same as the current state), set new `data`, and
-  perform any `actions`.
-  """
-  @type state_function_result ::
-    {:next_state, state_name, data} |
-    {:next_state, state_name, data, actions} |
-    common_state_callback_result
-
-  @typedoc """
-  `handle_event/4` return values in `:handle_event_function` callback mode.
-
-  `:next_state` will cause the `GenStateMachine` to transition to state
-  `state` (which may be the same as the current state), set new `data`, and
-  perform any `actions`.
-  """
-  @type handle_event_result ::
-    {:next_state, state, data} |
-    {:next_state, state, data, actions} |
-    common_state_callback_result
-
-  @typedoc """
-  Return values for state functions in all callback modes.
-
-  `:stop` will terminate the `GenStateMachine` with `reason` and set `data`.
-
-  `:stop_and_reply` will send all `reply_actions` before terminating with
-  `reason` and set `data`.
-
-  `:keep_state` will keep the current state, set `data`, and execute any
-  `actions`.
-
-  `:keep_state_and_data` will keep the current state and data, and execute any
-  `actions`.
-  """
-  @type common_state_callback_result ::
-    :stop |
-    {:stop, reason :: term} |
-    {:stop, reason :: term, data} |
-    {:stop_and_reply, reason :: term, reply_actions} |
-    {:stop_and_reply, reason :: term, reply_actions, data} |
-    {:keep_state, data} |
-    {:keep_state, data, actions} |
-    :keep_state_and_data |
-    {:keep_state_and_data, actions}
+  @type action :: :gen_statem.action
 
   @doc """
   Invoked when the server is started. `start_link/3` (or `start/3`) will
@@ -436,14 +331,10 @@ defmodule GenStateMachine do
 
   This function can optionally throw a result to return it.
   """
-  @callback init(args :: term) ::
-    {:ok, state, data} |
-    {:ok, state, data, actions} |
-    {:stop, reason :: term} |
-    :ignore
+  @callback init(args :: term) :: :gen_statem.init_result(state)
 
   @doc """
-  Whenever a `GenStateMachine` in callback mode `:state_functions` receives a
+  Whenever a `GenStateMachine` in callback mode `:state_functions` receives a
   call, cast, or normal process message, a state function is called.
 
   This spec exists to document the callback, but in actual use the name of the
@@ -452,17 +343,23 @@ defmodule GenStateMachine do
   Examples section above for more info.
 
   These functions can optionally throw a result to return it.
+
+  See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
+  for a complete reference.
   """
-  @callback state_name(event_type, event_content, data) :: state_function_result
+  @callback state_name(event_type, event_content, data) :: :gen_statem.event_handler_result(state_name())
 
   @doc """
-  Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
+  Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
   default) receives a call, cast, or normal process messsage, this callback will
   be invoked.
 
   This function can optionally throw a result to return it.
+
+  See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
+  for a complete reference.
   """
-  @callback handle_event(event_type, event_content, state, data) :: handle_event_result
+  @callback handle_event(event_type, event_content, state, data) :: :gen_statem.event_handler_result(state())
 
   @doc """
   Invoked when the server is about to exit. It should do any cleanup required.
@@ -829,7 +726,7 @@ defmodule GenStateMachine do
 
   See `reply/2` for more information.
   """
-  @spec reply([reply_action]) :: :ok
+  @spec reply([:gen_statem.reply_action]) :: :ok
   def reply(replies) do
     :gen_statem.reply(replies)
   end
