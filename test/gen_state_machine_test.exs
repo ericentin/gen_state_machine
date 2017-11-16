@@ -149,4 +149,26 @@ defmodule GenStateMachineTest do
       assert Thrower.code_change(nil, nil, nil, nil) == {:handle_event_function, nil, nil}
     end
   end
+
+  test "generates child_spec/1" do
+    assert EventFunctionSwitch.child_spec([:hello]) == %{
+             id: EventFunctionSwitch,
+             start: {EventFunctionSwitch, :start_link, [[:hello]]}
+           }
+
+    defmodule CustomEventFunctionSwitch do
+      use GenStateMachine, id: :id, restart: :temporary, shutdown: :infinity, start: {:foo, :bar, []}
+
+      def init(args) do
+        {:ok, args}
+      end
+    end
+
+    assert CustomEventFunctionSwitch.child_spec([:hello]) == %{
+             id: :id,
+             restart: :temporary,
+             shutdown: :infinity,
+             start: {:foo, :bar, []}
+           }
+  end
 end
