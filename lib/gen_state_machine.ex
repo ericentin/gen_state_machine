@@ -618,7 +618,7 @@ defmodule GenStateMachine do
   """
   @spec start_link(module, any, GenServer.options) :: GenServer.on_start
   def start_link(module, args, options \\ []) do
-    name = options[:name]
+    {name, options} = Keyword.pop(options, :name)
 
     if name do
       name =
@@ -642,7 +642,7 @@ defmodule GenStateMachine do
   """
   @spec start(module, any, GenServer.options) :: GenServer.on_start
   def start(module, args, options \\ []) do
-    name = options[:name]
+    {name, options} = Keyword.pop(options, :name)
 
     if name do
       name =
