@@ -484,6 +484,20 @@ defmodule GenStateMachine do
     quote location: :keep do
       @behaviour GenStateMachine
 
+      @args unquote(args)
+
+      @doc false
+      def child_spec(arg) do
+        default = %{
+          id: __MODULE__,
+          start: {__MODULE__, :start_link, [arg]}
+        }
+
+        Supervisor.child_spec(default, @args)
+      end
+
+      defoverridable child_spec: 1
+
       unless unquote(@gen_statem_callback_mode_callback) do
         @before_compile GenStateMachine
       end
