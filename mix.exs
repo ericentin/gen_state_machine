@@ -24,7 +24,7 @@ defmodule GenStateMachine.Mixfile do
       deps: deps(),
       description: description(),
       package: package(),
-      source_url: "https://github.com/antipax/gen_state_machine",
+      source_url: "https://github.com/ericentin/gen_state_machine",
       docs: [
         main: "GenStateMachine",
         extras: ["README.md"],
@@ -53,7 +53,7 @@ defmodule GenStateMachine.Mixfile do
       maintainers: ["Eric Entin"],
       licenses: ["Apache 2.0"],
       links: %{
-        "GitHub" => "https://github.com/antipax/gen_state_machine"
+        "GitHub" => "https://github.com/ericentin/gen_state_machine"
       }
     ]
   end
