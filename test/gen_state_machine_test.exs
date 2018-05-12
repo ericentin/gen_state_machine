@@ -88,6 +88,24 @@ defmodule GenStateMachineTest do
     assert GenStateMachine.stop(:stack, :normal) == :ok
   end
 
+  test "child_spec/1" do
+    assert EventFunctionSwitch.child_spec([:hello]) == %{
+             id: EventFunctionSwitch,
+             start: {EventFunctionSwitch, :start_link, [[:hello]]}
+           }
+
+    defmodule CustomStack do
+      use GenStateMachine, id: :id, restart: :temporary, shutdown: :infinity, start: {:foo, :bar, []}
+    end
+
+    assert CustomStack.child_spec([:hello]) == %{
+             id: :id,
+             restart: :temporary,
+             shutdown: :infinity,
+             start: {:foo, :bar, []}
+           }
+  end
+
   defmodule BadInit1 do
     use GenStateMachine
 
