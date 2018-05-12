@@ -261,7 +261,7 @@ defmodule GenStateMachine do
   [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_type)
   for details.
   """
-  @type event_type :: :gen_statem.event_type
+  @type event_type :: :gen_statem.event_type()
 
   @typedoc """
   The callback mode for the GenStateMachine.
@@ -296,7 +296,7 @@ defmodule GenStateMachine do
   [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-action)
   for the possible values.
   """
-  @type action :: :gen_statem.action
+  @type action :: :gen_statem.action()
 
   @doc """
   Invoked when the server is started. `start_link/3` (or `start/3`) will
@@ -347,7 +347,8 @@ defmodule GenStateMachine do
   See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
   for a complete reference.
   """
-  @callback state_name(event_type, event_content, data) :: :gen_statem.event_handler_result(state_name())
+  @callback state_name(event_type, event_content, data) ::
+              :gen_statem.event_handler_result(state_name())
 
   @doc """
   Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
@@ -359,7 +360,8 @@ defmodule GenStateMachine do
   See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
   for a complete reference.
   """
-  @callback handle_event(event_type, event_content, state, data) :: :gen_statem.event_handler_result(state())
+  @callback handle_event(event_type, event_content, state, data) ::
+              :gen_statem.event_handler_result(state())
 
   @doc """
   Invoked when the server is about to exit. It should do any cleanup required.
@@ -432,9 +434,9 @@ defmodule GenStateMachine do
   This function can optionally throw a result to return it.
   """
   @callback code_change(old_vsn :: term | {:down, vsn :: term}, state, data, extra :: term) ::
-    {:ok, state, data} |
-    {callback_mode, state, data} |
-    reason :: term
+              {:ok, state, data}
+              | {callback_mode, state, data}
+              | reason :: term
 
   @doc """
   Invoked in some cases to retrieve a formatted version of the `GenStateMachine`
@@ -462,20 +464,20 @@ defmodule GenStateMachine do
 
   @optional_callbacks state_name: 3, handle_event: 4, format_status: 2
 
-  @gen_statem_callback_mode_callback (
-    Application.loaded_applications()
-    |> Enum.find_value(fn {app, _, vsn} -> app == :stdlib and vsn end)
-    |> to_string()
-    |> String.split(".")
-    |> case do
-      [major] -> "#{major}.0.0"
-      [major, minor] -> "#{major}.#{minor}.0"
-      [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
-    end
-    |> Version.parse()
-    |> elem(1)
-    |> Version.match?(">= 3.1.0")
-  )
+  @gen_statem_callback_mode_callback Application.loaded_applications()
+                                     |> Enum.find_value(fn {app, _, vsn} ->
+                                       app == :stdlib and vsn
+                                     end)
+                                     |> to_string()
+                                     |> String.split(".")
+                                     |> (case do
+                                           [major] -> "#{major}.0.0"
+                                           [major, minor] -> "#{major}.#{minor}.0"
+                                           [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
+                                         end)
+                                     |> Version.parse()
+                                     |> elem(1)
+                                     |> Version.match?(">= 3.1.0")
 
   @doc false
   defmacro __using__(args) do
@@ -534,7 +536,7 @@ defmodule GenStateMachine do
   @doc false
   defmacro __before_compile__(_env) do
     quote location: :keep do
-      defoverridable [init: 1, code_change: 4]
+      defoverridable init: 1, code_change: 4
 
       @doc false
       def init(args) do
@@ -616,7 +618,7 @@ defmodule GenStateMachine do
   or `:ignore`, the process is terminated and this function returns
   `{:error, reason}` or `:ignore`, respectively.
   """
-  @spec start_link(module, any, GenServer.options) :: GenServer.on_start
+  @spec start_link(module, any, GenServer.options()) :: GenServer.on_start()
   def start_link(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
@@ -640,7 +642,7 @@ defmodule GenStateMachine do
 
   See `start_link/3` for more information.
   """
-  @spec start(module, any, GenServer.options) :: GenServer.on_start
+  @spec start(module, any, GenServer.options()) :: GenServer.on_start()
   def start(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
@@ -669,7 +671,7 @@ defmodule GenStateMachine do
   If the reason is any other than `:normal`, `:shutdown` or
   `{:shutdown, _}`, an error report is logged.
   """
-  @spec stop(GenServer.server, reason :: term, timeout) :: :ok
+  @spec stop(GenServer.server(), reason :: term, timeout) :: :ok
   def stop(server, reason \\ :normal, timeout \\ :infinity) do
     :gen_statem.stop(server, reason, timeout)
   end
@@ -696,7 +698,7 @@ defmodule GenStateMachine do
   gets delivered to the dead proxy process, and hence gets discarded. This is
   less efficient than using `:infinity` as a timeout.
   """
-  @spec call(GenServer.server, term, timeout) :: term
+  @spec call(GenServer.server(), term, timeout) :: term
   def call(server, request, timeout \\ :infinity) do
     :gen_statem.call(server, request, timeout)
   end
@@ -712,7 +714,7 @@ defmodule GenStateMachine do
   The appropriate state function will be called on the server to handle
   the request.
   """
-  @spec cast(GenServer.server, term) :: :ok
+  @spec cast(GenServer.server(), term) :: :ok
   def cast(server, request) do
     :gen_statem.cast(server, request)
   end
@@ -726,7 +728,7 @@ defmodule GenStateMachine do
 
   See `reply/2` for more information.
   """
-  @spec reply([:gen_statem.reply_action]) :: :ok
+  @spec reply([:gen_statem.reply_action()]) :: :ok
   def reply(replies) do
     :gen_statem.reply(replies)
   end
@@ -760,7 +762,7 @@ defmodule GenStateMachine do
       end
 
   """
-  @spec reply(GenServer.from, term) :: :ok
+  @spec reply(GenServer.from(), term) :: :ok
   def reply(client, reply) do
     :gen_statem.reply(client, reply)
   end

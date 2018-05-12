@@ -39,6 +39,7 @@ defmodule GenStateMachineTest do
     def off(:cast, :flip, data) do
       {:next_state, :on, data + 1}
     end
+
     def off(event_type, event_content, data) do
       handle_event(event_type, event_content, data)
     end
@@ -46,6 +47,7 @@ defmodule GenStateMachineTest do
     def on(:cast, :flip, data) do
       {:next_state, :off, data}
     end
+
     def on(event_type, event_content, data) do
       handle_event(event_type, event_content, data)
     end
@@ -104,43 +106,45 @@ defmodule GenStateMachineTest do
 
   test "init/1 should not allow callback mode in return" do
     result = GenStateMachine.start(BadInit1, nil)
+
     assert result in [
-      {:error, {:bad_return_value, {:handle_event_function, nil, nil}}},
-      {:error, {:bad_return_from_init, {:handle_event_function, nil, nil}}}
-    ]
+             {:error, {:bad_return_value, {:handle_event_function, nil, nil}}},
+             {:error, {:bad_return_from_init, {:handle_event_function, nil, nil}}}
+           ]
 
     result = GenStateMachine.start(BadInit2, nil)
+
     assert result in [
-      {:error, {:bad_return_value, {:state_functions, nil, nil}}},
-      {:error, {:bad_return_from_init, {:state_functions, nil, nil}}}
-    ]
+             {:error, {:bad_return_value, {:state_functions, nil, nil}}},
+             {:error, {:bad_return_from_init, {:state_functions, nil, nil}}}
+           ]
   end
 
-  @gen_statem_callback_mode_callback (
-    Application.loaded_applications()
-    |> Enum.find_value(fn {app, _, vsn} -> app == :stdlib and vsn end)
-    |> to_string()
-    |> String.split(".")
-    |> case do
-      [major] -> "#{major}.0.0"
-      [major, minor] -> "#{major}.#{minor}.0"
-      [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
-    end
-    |> Version.parse()
-    |> elem(1)
-    |> Version.match?(">= 3.1.0")
-  )
+  @gen_statem_callback_mode_callback Application.loaded_applications()
+                                     |> Enum.find_value(fn {app, _, vsn} ->
+                                       app == :stdlib and vsn
+                                     end)
+                                     |> to_string()
+                                     |> String.split(".")
+                                     |> (case do
+                                           [major] -> "#{major}.0.0"
+                                           [major, minor] -> "#{major}.#{minor}.0"
+                                           [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
+                                         end)
+                                     |> Version.parse()
+                                     |> elem(1)
+                                     |> Version.match?(">= 3.1.0")
 
   unless @gen_statem_callback_mode_callback do
     defmodule Thrower do
       use GenStateMachine
 
       def init(_args) do
-        throw {:ok, nil, nil}
+        throw({:ok, nil, nil})
       end
 
       def code_change(_old_vsn, state, data, _extra) do
-        throw {:ok, state, data}
+        throw({:ok, state, data})
       end
     end
 
