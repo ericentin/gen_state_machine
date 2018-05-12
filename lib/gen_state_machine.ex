@@ -481,7 +481,7 @@ defmodule GenStateMachine do
 
   @doc false
   defmacro __using__(args) do
-    callback_mode = Keyword.get(args, :callback_mode, :handle_event_function)
+    {callback_mode, args} = Keyword.pop(args, :callback_mode, :handle_event_function)
 
     quote location: :keep do
       @behaviour GenStateMachine
@@ -520,7 +520,20 @@ defmodule GenStateMachine do
         :undefined
       end
 
-      overridable_funcs = [init: 1, terminate: 3, code_change: 4]
+      @doc false
+      def child_spec(arg) do
+        default = %{id: __MODULE__, start: {__MODULE__, :start_link, [arg]}}
+
+        Enum.reduce(unquote(args), default, fn
+          {key, value}, acc when key in [:id, :start, :restart, :shutdown, :type, :modules] ->
+            Map.put(acc, key, value)
+
+          {key, _value}, _acc ->
+            raise ArgumentError, "unknown key #{inspect(key)} in child specification override"
+        end)
+      end
+
+      overridable_funcs = [init: 1, terminate: 3, code_change: 4, child_spec: 1]
 
       overridable_funcs =
         if @gen_statem_callback_mode == :handle_event_function do

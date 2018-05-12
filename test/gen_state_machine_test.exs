@@ -120,6 +120,28 @@ defmodule GenStateMachineTest do
            ]
   end
 
+  defmodule CustomChildSpec do
+    use GenStateMachine,
+      id: :id,
+      restart: :temporary,
+      shutdown: :infinity,
+      start: {:foo, :bar, []}
+  end
+
+  test "child_spec/1" do
+    assert EventFunctionSwitch.child_spec([:hello]) == %{
+             id: EventFunctionSwitch,
+             start: {EventFunctionSwitch, :start_link, [[:hello]]}
+           }
+
+    assert CustomChildSpec.child_spec([:hello]) == %{
+             id: :id,
+             restart: :temporary,
+             shutdown: :infinity,
+             start: {:foo, :bar, []}
+           }
+  end
+
   @gen_statem_callback_mode_callback Application.loaded_applications()
                                      |> Enum.find_value(fn {app, _, vsn} ->
                                        app == :stdlib and vsn
