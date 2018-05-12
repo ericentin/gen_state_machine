@@ -34,15 +34,16 @@ defmodule GenStateMachine.TranslatorTest do
 
              catch_exit(GenStateMachine.call(pid, actions))
              :timer.sleep(100)
-           end) =~ ~r"""
-           \[error\] GenStateMachine #PID<\d+\.\d+\.\d+> terminating
-           \*\* \(RuntimeError\) oops
-           .*/\d+
-           Last message: {:internal, :error}
-           State: {:state, :data}
-           Callback mode: :handle_event_function
-           Queued messages: \[internal: :queued\]
-           Postponed messages: \[internal: :postpone\]
-           """s
+           end) =~
+             ~r"""
+             \[error\] GenStateMachine #PID<\d+\.\d+\.\d+> terminating
+             \*\* \(RuntimeError\) oops
+             .*/\d+
+             Callback mode: :handle_event_function
+             Last event: {:internal, :error}
+             Postponed events: \[internal: :postpone\]
+             Queued events: \[internal: :queued\]
+             State: {:state, :data}
+             """s
   end
 end

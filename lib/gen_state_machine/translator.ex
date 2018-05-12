@@ -6,17 +6,11 @@ defmodule GenStateMachine.Translator do
     opts = Application.get_env(:logger, :translator_inspect_opts)
 
     case message do
-      {'** State machine ~p terminating~n' ++ rest, [name | args]} ->
-        msg = [
-          "GenStateMachine #{inspect(name)} terminating"
-          | statem_exception(rest, args, opts)
-        ]
+      {'** State machine ~tp terminating~n' ++ _ = format, args} ->
+        do_translate(min_level, format, args, opts)
 
-        if min_level == :debug do
-          {:ok, statem_debug(rest, args, opts, msg)}
-        else
-          {:ok, msg}
-        end
+      {'** State machine ~p terminating~n' ++ _ = format, args} ->
+        do_translate(min_level, format, args, opts)
 
       _ ->
         :none
@@ -27,55 +21,69 @@ defmodule GenStateMachine.Translator do
     :none
   end
 
-  defp statem_exception('** Last event = ~p~n' ++ rest, [_msg | args], opts) do
-    statem_exception(rest, args, opts)
-  end
+  defp do_translate(min_level, format, args, opts) do
+    keys =
+      format
+      |> to_string()
+      |> String.split(~r/~tp|~p/, trim: true)
+      |> Enum.flat_map(&map_key/1)
 
-  defp statem_exception(rest, [_state, class, reason | args], _) do
-    stack = statem_stack(rest, args)
-    formatted = Exception.format(class, reason, stack)
-    [?\n | :erlang.binary_part(formatted, 0, byte_size(formatted) - 1)]
-  end
+    args =
+      [keys, args]
+      |> List.zip()
+      |> Map.new()
 
-  defp statem_stack(rest, args) do
-    case :string.str(rest, 'Stacktrace') do
-      0 -> []
-      _ -> List.last(args)
+    msg = [
+      "GenStateMachine #{inspect(args.name)} terminating"
+      | statem_exception(args, opts)
+    ]
+
+    if min_level == :debug do
+      {:ok, statem_debug(args, opts, msg)}
+    else
+      {:ok, msg}
     end
   end
 
-  defp statem_debug('** Last event = ~p~n' ++ rest, [last | args], opts, msg) do
-    msg = [msg, "\nLast message: " | inspect(last, opts)]
-    statem_debug(rest, args, opts, msg)
+  defp statem_exception(args, _opts) do
+    formatted = Exception.format(args.class, args.reason, args.stack)
+    [?\n | :erlang.binary_part(formatted, 0, byte_size(formatted) - 1)]
   end
 
-  defp statem_debug('** When server state  = ~p~n' ++ rest, args, opts, msg) do
-    [state | args] = args
-    msg = [msg, "\nState: " | inspect(state, opts)]
-    statem_debug(rest, args, opts, msg)
+  defp map_key(arg) do
+    String.split(arg, ~r/\*\* |~n/, trim: true)
+    |> Enum.filter(&(String.contains?(&1, "=") || String.contains?(&1, "State machine")))
+    |> case do
+      [] -> []
+      ["State machine" <> _] -> [:name]
+      ["Last event" <> _] -> [:last_event]
+      ["When server state" <> _] -> [:state]
+      ["Reason for termination" <> _] -> [:class, :reason]
+      ["Callback mode" <> _] -> [:callback_mode]
+      ["Stacktrace" <> _] -> [:stack]
+      ["Queued" <> _] -> [:queued]
+      ["Postponed" <> _] -> [:postponed]
+    end
   end
 
-  defp statem_debug('** Reason for termination = ~w:~p~n' ++ rest, args, opts, msg) do
-    [_class, _reason | args] = args
-    statem_debug(rest, args, opts, msg)
+  defp statem_debug(args, opts, msg) do
+    [msg, Enum.map(Enum.sort(args), &translate_arg(&1, opts))]
   end
 
-  defp statem_debug('** Callback mode = ~p~n' ++ rest, args, opts, msg) do
-    [mode | args] = args
-    msg = [msg, "\nCallback mode: " | inspect(mode)]
-    statem_debug(rest, args, opts, msg)
-  end
+  defp translate_arg({:last_event, last_event}, opts),
+    do: ["\nLast event: " | inspect(last_event, opts)]
 
-  defp statem_debug('** Queued = ~p~n' ++ rest, [queue | args], opts, msg) do
-    msg = [msg, "\nQueued messages: " | inspect(queue, opts)]
-    statem_debug(rest, args, opts, msg)
-  end
+  defp translate_arg({:state, state}, opts),
+    do: ["\nState: " | inspect(state, opts)]
 
-  defp statem_debug('** Postponed = ~p~n' ++ _, [postpone | _], opts, msg) do
-    [msg, "\nPostponed messages: " | inspect(postpone, opts)]
-  end
+  defp translate_arg({:callback_mode, callback_mode}, opts),
+    do: ["\nCallback mode: " | inspect(callback_mode, opts)]
 
-  defp statem_debug(_, _, _, msg) do
-    msg
-  end
+  defp translate_arg({:queued, queued}, opts),
+    do: ["\nQueued events: " | inspect(queued, opts)]
+
+  defp translate_arg({:postponed, postponed}, opts),
+    do: ["\nPostponed events: " | inspect(postponed, opts)]
+
+  defp translate_arg(_arg, _opts), do: []
 end
