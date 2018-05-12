@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.0.2 (2018-05-11)
+
+* Fix typespecs for start_link.
+* Translator refactor means more logs are translated than before, as well as more accurately.
+* The `child_spec/1` callback (for Elixir v1.6 child specs) is now generated automatically.
+
 ## v2.0.1 (2017-09-05)
 
 Fix typespecs for OTP 20+.

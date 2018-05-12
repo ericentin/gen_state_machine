@@ -520,7 +520,11 @@ defmodule GenStateMachine do
         :undefined
       end
 
-      @doc false
+      @doc """
+      Returns a specification to start this module under a supervisor.
+
+      See `Supervisor` in Elixir v1.6+.
+      """
       def child_spec(arg) do
         default = %{id: __MODULE__, start: {__MODULE__, :start_link, [arg]}}
 
