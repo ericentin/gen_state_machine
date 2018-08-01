@@ -2,6 +2,18 @@ defmodule GenStateMachine.Translator do
   @moduledoc false
 
   @doc false
+  # OTP21 and after
+  def translate(min_level, :error, :report, {:logger, %{label: label} = report}) do
+    case label do
+      {:gen_statem, :terminate} ->
+        do_translate(min_level, report)
+
+      _ ->
+        :none
+    end
+  end
+
+  # OTP20 and before
   def translate(min_level, :error, :format, message) do
     opts = Application.get_env(:logger, :translator_inspect_opts)
 
@@ -16,11 +28,28 @@ defmodule GenStateMachine.Translator do
         :none
     end
   end
-
+  
   def translate(_min_level, _level, _kind, _message) do
     :none
   end
 
+  # OTP21 and after
+  defp do_translate(min_level, report) do
+    inspect_opts = Application.get_env(:logger, :translator_inspect_opts)
+
+    %{name: name, state: state} = report
+
+    msg = ["GenStateMachine #{inspect(name)} terminating", statem_exception(report)]
+
+    if min_level == :debug do
+      msg = [msg, "\nState: ", inspect(state, inspect_opts)]
+      {:ok, statem_debug(report, inspect_opts, msg)}
+    else
+      {:ok, msg}
+    end
+  end
+
+  # OTP20 and before
   defp do_translate(min_level, format, args, opts) do
     keys =
       format
@@ -35,7 +64,7 @@ defmodule GenStateMachine.Translator do
 
     msg = [
       "GenStateMachine #{inspect(args.name)} terminating"
-      | statem_exception(args, opts)
+      | statem_exception(args)
     ]
 
     if min_level == :debug do
@@ -45,8 +74,18 @@ defmodule GenStateMachine.Translator do
     end
   end
 
-  defp statem_exception(args, _opts) do
-    formatted = Exception.format(args.class, args.reason, args.stack)
+  # OTP21 and later
+  defp statem_exception(%{reason: {class, reason, stack}}) do
+    do_statem_exception(class, reason, stack)
+  end
+  
+  # OTP20 and before
+  defp statem_exception(%{class: class, reason: reason, stack: stack}) do
+    do_statem_exception(class, reason, stack)
+  end
+  
+  defp do_statem_exception(class, reason, stack) do
+    formatted = Exception.format(class, reason, stack)
     [?\n | :erlang.binary_part(formatted, 0, byte_size(formatted) - 1)]
   end
 
@@ -81,6 +120,9 @@ defmodule GenStateMachine.Translator do
 
   defp translate_arg({:queued, queued}, opts),
     do: ["\nQueued events: " | inspect(queued, opts)]
+
+  defp translate_arg({:queue, [last | queued]}, opts),
+    do: ["\nLast event: ", inspect(last, opts), "\nQueued events: " | inspect(queued, opts)]
 
   defp translate_arg({:postponed, postponed}, opts),
     do: ["\nPostponed events: " | inspect(postponed, opts)]

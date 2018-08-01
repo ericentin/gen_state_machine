@@ -25,25 +25,29 @@ defmodule GenStateMachine.TranslatorTest do
   test "translates :gen_statem crashes debug" do
     {:ok, pid} = GenStateMachine.start(FailingStateMachine, {:state, :data})
 
-    assert capture_log([level: :debug], fn ->
-             actions = [
-               {:next_event, :internal, :postpone},
-               {:next_event, :internal, :error},
-               {:next_event, :internal, :queued}
-             ]
+    log =
+      capture_log([level: :debug], fn ->
+        actions = [
+          {:next_event, :internal, :postpone},
+          {:next_event, :internal, :error},
+          {:next_event, :internal, :queued}
+        ]
 
-             catch_exit(GenStateMachine.call(pid, actions))
-             :timer.sleep(100)
-           end) =~
-             ~r"""
-             \[error\] GenStateMachine #PID<\d+\.\d+\.\d+> terminating
-             \*\* \(RuntimeError\) oops
-             .*/\d+
-             Callback mode: :handle_event_function
-             Last event: {:internal, :error}
-             Postponed events: \[internal: :postpone\]
-             Queued events: \[internal: :queued\]
-             State: {:state, :data}
-             """s
+        catch_exit(GenStateMachine.call(pid, actions))
+        :timer.sleep(100)
+      end)
+
+    Enum.each(
+      [
+        ~r"\[error\] GenStateMachine #PID<\d+\.\d+\.\d+> terminating",
+        ~r"\*\* \(RuntimeError\) oops",
+        ~r"Callback mode: :handle_event_function",
+        ~r"Last event: {:internal, :error}",
+        ~r"Postponed events: \[internal: :postpone\]",
+        ~r"Queued events: \[internal: :queued\]",
+        ~r"State: {:state, :data}"
+      ],
+      fn test_string -> assert Regex.match?(test_string, log) end
+    )
   end
 end
