@@ -10,4 +10,11 @@ otp_release:
   - 20.0
   - 20.3.5
   - 21.0.5
+matrix:
+  exclude:
+  - elixir: 1.4.5
+    otp_release: 21.0.5
+  - elixir: 1.5.3
+    otp_release: 21.0.5
+
 sudo: false
