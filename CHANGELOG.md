@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.3 (2018-08-14)
+
+Log translator no longer ignores messages on OTP 21+.
+
 ## v2.0.2 (2018-05-11)
 
 * Fix typespecs for start_link.
