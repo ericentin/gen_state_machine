@@ -436,7 +436,7 @@ defmodule GenStateMachine do
   @callback code_change(old_vsn :: term | {:down, vsn :: term}, state, data, extra :: term) ::
               {:ok, state, data}
               | {callback_mode, state, data}
-              | reason :: term
+              | (reason :: term)
 
   @doc """
   Invoked in some cases to retrieve a formatted version of the `GenStateMachine`
