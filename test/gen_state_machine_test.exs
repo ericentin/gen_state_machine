@@ -33,6 +33,46 @@ defmodule GenStateMachineTest do
     assert GenStateMachine.cast(:foo, {:push, :world}) == :ok
   end
 
+  defmodule EventFunctionEnterSwitch do
+    use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
+
+    def handle_event(:enter, _, :off, data) do
+      IO.puts("You're in the enter state")
+      {:next_state, :not_real, data}
+    end
+
+    def handle_event(:cast, :flip, :off, data) do
+      IO.puts("You're in the aaa state")
+      {:next_state, :on, data + 1}
+    end
+
+    def handle_event(:cast, :flip, :on, data) do
+      IO.puts("You're in the bbb state")
+      {:next_state, :off, data}
+    end
+
+    def handle_event({:call, from}, :get_count, state, data) do
+      {:next_state, state, data, [{:reply, from, data}]}
+    end
+  end
+
+  test "handle_event_function and state_enter" do
+    IO.puts("hello there")
+    {:ok, pid} = GenStateMachine.start_link(EventFunctionSwitch, {:off, 0})
+
+    {:links, links} = Process.info(self(), :links)
+    assert pid in links
+
+    assert GenStateMachine.cast(pid, :flip) == :ok
+    assert GenStateMachine.cast(pid, :flip) == :ok
+    assert GenStateMachine.call(pid, :get_count) == 1
+    assert GenStateMachine.stop(pid) == :ok
+
+    assert GenStateMachine.cast({:global, :foo}, {:push, :world}) == :ok
+    assert GenStateMachine.cast({:via, :foo, :bar}, {:push, :world}) == :ok
+    assert GenStateMachine.cast(:foo, {:push, :world}) == :ok
+  end
+
   defmodule StateFunctionsSwitch do
     use GenStateMachine, callback_mode: :state_functions
 
