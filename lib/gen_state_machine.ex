@@ -473,7 +473,7 @@ defmodule GenStateMachine do
                                      |> (case do
                                            [major] -> "#{major}.0.0"
                                            [major, minor] -> "#{major}.#{minor}.0"
-                                           [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
+                                           [major, minor, patch | _] -> "#{major}.#{minor}.#{patch}"
                                          end)
                                      |> Version.parse()
                                      |> elem(1)
