@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.0.4 (2018-08-14)
+
+Version check no longer fails on erts versions with greater than 3 components.
+
 ## v2.0.3 (2018-08-14)
 
 Log translator no longer ignores messages on OTP 21+.
