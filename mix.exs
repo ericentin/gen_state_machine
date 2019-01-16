@@ -12,7 +12,7 @@ end
 defmodule GenStateMachine.Mixfile do
   use Mix.Project
 
-  @version "2.0.4"
+  @version "2.0.5"
 
   def project do
     [

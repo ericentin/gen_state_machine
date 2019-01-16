@@ -1,6 +1,10 @@
 # Changelog
 
-## v2.0.4 (2018-08-14)
+## v2.0.5 (2019-01-16)
+
+Typespec/code formatting changes for Elixir v1.8.
+
+## v2.0.4 (2018-11-20)
 
 Version check no longer fails on erts versions with greater than 3 components.
 

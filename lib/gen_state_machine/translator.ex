@@ -28,7 +28,7 @@ defmodule GenStateMachine.Translator do
         :none
     end
   end
-  
+
   def translate(_min_level, _level, _kind, _message) do
     :none
   end
@@ -78,12 +78,12 @@ defmodule GenStateMachine.Translator do
   defp statem_exception(%{reason: {class, reason, stack}}) do
     do_statem_exception(class, reason, stack)
   end
-  
+
   # OTP20 and before
   defp statem_exception(%{class: class, reason: reason, stack: stack}) do
     do_statem_exception(class, reason, stack)
   end
-  
+
   defp do_statem_exception(class, reason, stack) do
     formatted = Exception.format(class, reason, stack)
     [?\n | :erlang.binary_part(formatted, 0, byte_size(formatted) - 1)]
