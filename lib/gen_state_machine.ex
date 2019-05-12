@@ -487,8 +487,6 @@ defmodule GenStateMachine do
   @doc false
   defmacro __using__(args) do
     {callback_mode, args} = Keyword.pop(args, :callback_mode, :handle_event_function)
-    IO.puts("CALLBACK_MODE")
-    IO.puts(inspect(callback_mode))
 
     quote location: :keep do
       @behaviour GenStateMachine
@@ -506,7 +504,6 @@ defmodule GenStateMachine do
 
       if unquote(@gen_statem_callback_mode_callback) do
         def callback_mode do
-          IO.puts(inspect(@gen_statem_callback_mode))
           @gen_statem_callback_mode
         end
       end
