@@ -640,7 +640,7 @@ defmodule GenStateMachine do
   or `:ignore`, the process is terminated and this function returns
   `{:error, reason}` or `:ignore`, respectively.
   """
-  @spec start_link(module, any, GenServer.options()) :: GenServer.on_start()
+  @spec start_link(module, any, GenServer.options()) :: :gen_statem.start_ret()
   def start_link(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
@@ -664,7 +664,7 @@ defmodule GenStateMachine do
 
   See `start_link/3` for more information.
   """
-  @spec start(module, any, GenServer.options()) :: GenServer.on_start()
+  @spec start(module, any, GenServer.options()) :: :gen_statem.start_ret()
   def start(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
@@ -693,7 +693,7 @@ defmodule GenStateMachine do
   If the reason is any other than `:normal`, `:shutdown` or
   `{:shutdown, _}`, an error report is logged.
   """
-  @spec stop(GenServer.server(), reason :: term, timeout) :: :ok
+  @spec stop(:gen_statem.server_ref(), reason :: term, timeout) :: :ok
   def stop(server, reason \\ :normal, timeout \\ :infinity) do
     :gen_statem.stop(server, reason, timeout)
   end
@@ -720,7 +720,7 @@ defmodule GenStateMachine do
   gets delivered to the dead proxy process, and hence gets discarded. This is
   less efficient than using `:infinity` as a timeout.
   """
-  @spec call(GenServer.server(), term, timeout) :: term
+  @spec call(:gen_statem.server_ref(), term, timeout) :: term
   def call(server, request, timeout \\ :infinity) do
     :gen_statem.call(server, request, timeout)
   end
@@ -736,7 +736,7 @@ defmodule GenStateMachine do
   The appropriate state function will be called on the server to handle
   the request.
   """
-  @spec cast(GenServer.server(), term) :: :ok
+  @spec cast(:gen_statem.server_ref(), term) :: :ok
   def cast(server, request) do
     :gen_statem.cast(server, request)
   end
@@ -784,7 +784,7 @@ defmodule GenStateMachine do
       end
 
   """
-  @spec reply(GenServer.from(), term) :: :ok
+  @spec reply(:gen_statem.from(), term) :: :ok
   def reply(client, reply) do
     :gen_statem.reply(client, reply)
   end
