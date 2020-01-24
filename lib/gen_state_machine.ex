@@ -508,7 +508,12 @@ defmodule GenStateMachine do
         end
       end
 
-      if @gen_statem_callback_mode == :handle_event_function do
+      @callback_mode_handle_event_function (case @gen_statem_callback_mode do
+        cbm when is_list(cbm) -> Enum.member?(cbm, :handle_event_function)
+        cbm when is_atom(cbm) -> cbm == :handle_event_function
+      end)
+
+      if @callback_mode_handle_event_function do
         @doc false
         def handle_event(_event_type, _event_content, _state, _data) do
           {:stop, :bad_event}
@@ -545,7 +550,7 @@ defmodule GenStateMachine do
       overridable_funcs = [init: 1, terminate: 3, code_change: 4, child_spec: 1]
 
       overridable_funcs =
-        if @gen_statem_callback_mode == :handle_event_function do
+        if @callback_mode_handle_event_function do
           [handle_event: 4] ++ overridable_funcs
         else
           overridable_funcs
