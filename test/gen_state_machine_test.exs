@@ -149,9 +149,14 @@ defmodule GenStateMachineTest do
                                      |> to_string()
                                      |> String.split(".")
                                      |> (case do
-                                           [major] -> "#{major}.0.0"
-                                           [major, minor] -> "#{major}.#{minor}.0"
-                                           [major, minor, patch] -> "#{major}.#{minor}.#{patch}"
+                                           [major] ->
+                                             "#{major}.0.0"
+
+                                           [major, minor] ->
+                                             "#{major}.#{minor}.0"
+
+                                           [major, minor, patch | _] ->
+                                             "#{major}.#{minor}.#{patch}"
                                          end)
                                      |> Version.parse()
                                      |> elem(1)

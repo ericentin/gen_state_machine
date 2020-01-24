@@ -268,7 +268,7 @@ defmodule GenStateMachine do
 
   See the Example section above for more info.
   """
-  @type callback_mode :: :state_functions | :handle_event_function
+  @type callback_mode :: :gen_statem.callback_mode()
 
   @typedoc """
   The message content received as the result of an event.
@@ -509,9 +509,12 @@ defmodule GenStateMachine do
       end
 
       @callback_mode_handle_event_function (case @gen_statem_callback_mode do
-        cbm when is_list(cbm) -> Enum.member?(cbm, :handle_event_function)
-        cbm when is_atom(cbm) -> cbm == :handle_event_function
-      end)
+                                              cbm when is_list(cbm) ->
+                                                Enum.member?(cbm, :handle_event_function)
+
+                                              cbm when is_atom(cbm) ->
+                                                cbm == :handle_event_function
+                                            end)
 
       if @callback_mode_handle_event_function do
         @doc false

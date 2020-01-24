@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.1.0 (2020-01-24)
+
+* Typespecs now rely on gen_statem upstream types where available.
+* The callback mode option now allows you to specify a list, for use with the [`:state_enter`](https://erlang.org/doc/man/gen_statem.html#type-state_enter) option.
+
 ## v2.0.5 (2019-01-16)
 
 Typespec/code formatting changes for Elixir v1.8.

@@ -1,16 +1,15 @@
 defmodule StateEnterTest do
   use ExUnit.Case
 
-
   defmodule EventFunctionEnterSwitch do
     use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
 
     def handle_event(:enter, _event, state, data) do
-      {:next_state, state, %{data | enters: data.enters+1}}
+      {:next_state, state, %{data | enters: data.enters + 1}}
     end
 
     def handle_event(:cast, :flip, :off, data) do
-      {:next_state, :on, %{data | flips: data.flips+1}}
+      {:next_state, :on, %{data | flips: data.flips + 1}}
     end
 
     def handle_event(:cast, :flip, :on, data) do
@@ -23,7 +22,8 @@ defmodule StateEnterTest do
   end
 
   test "handle_event_function and state_enter" do
-    {:ok, pid} = GenStateMachine.start_link(EventFunctionEnterSwitch, {:off, %{enters: 0, flips: 0}})
+    {:ok, pid} =
+      GenStateMachine.start_link(EventFunctionEnterSwitch, {:off, %{enters: 0, flips: 0}})
 
     {:links, links} = Process.info(self(), :links)
     assert pid in links
