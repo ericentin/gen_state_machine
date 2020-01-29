@@ -1,4 +1,4 @@
-![Elixir CI](https://github.com/ericentin/gen_state_machine/workflows/Elixir%20CI/badge.svg)
+[![Elixir CI](https://github.com/ericentin/gen_state_machine/workflows/Elixir%20CI/badge.svg)](https://github.com/ericentin/gen_state_machine/actions?query=workflow%3A%22Elixir+CI%22)
 
 # GenStateMachine
 
