@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ericentin/gen_state_machine.svg?branch=master)](https://travis-ci.org/ericentin/gen_state_machine)
+![Elixir CI](https://github.com/ericentin/gen_state_machine/workflows/Elixir%20CI/badge.svg)
 
 # GenStateMachine
 
