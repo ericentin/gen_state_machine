@@ -10,6 +10,9 @@ jobs:
       matrix:
         otp: [20.3, 21.3, 22.2]
         elixir: [1.7.4, 1.8.2, 1.9.4, 1.10.0]
+        exclude:
+          - otp: 20.3
+            elixir: 1.10.0
 
     steps:
     - uses: actions/checkout@v2
