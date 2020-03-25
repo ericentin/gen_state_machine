@@ -219,8 +219,8 @@ defmodule GenStateMachine do
   If you wish to find out more about gen_statem, the documentation and links
   in Erlang can provide extra insight.
 
-    * [`:gen_statem` module documentation](http://erlang.org/documentation/doc-8.0-rc1/lib/stdlib-3.0/doc/html/gen_statem.html)
-    * [gen_statem Behaviour – OTP Design Principles](http://erlang.org/documentation/doc-8.0-rc1/doc/design_principles/statem.html)
+    * [`:gen_statem` module documentation](http://erlang.org/doc/man/gen_statem.html)
+    * [gen_statem Behaviour – OTP Design Principles](http://erlang.org/doc/design_principles/statem.html)
   """
 
   @typedoc """
