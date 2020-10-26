@@ -141,43 +141,4 @@ defmodule GenStateMachineTest do
              start: {:foo, :bar, []}
            }
   end
-
-  @gen_statem_callback_mode_callback Application.loaded_applications()
-                                     |> Enum.find_value(fn {app, _, vsn} ->
-                                       app == :stdlib and vsn
-                                     end)
-                                     |> to_string()
-                                     |> String.split(".")
-                                     |> (case do
-                                           [major] ->
-                                             "#{major}.0.0"
-
-                                           [major, minor] ->
-                                             "#{major}.#{minor}.0"
-
-                                           [major, minor, patch | _] ->
-                                             "#{major}.#{minor}.#{patch}"
-                                         end)
-                                     |> Version.parse()
-                                     |> elem(1)
-                                     |> Version.match?(">= 3.1.0")
-
-  unless @gen_statem_callback_mode_callback do
-    defmodule Thrower do
-      use GenStateMachine
-
-      def init(_args) do
-        throw({:ok, nil, nil})
-      end
-
-      def code_change(_old_vsn, state, data, _extra) do
-        throw({:ok, state, data})
-      end
-    end
-
-    test "re-overridden callbacks should support thrown values" do
-      assert Thrower.init(nil) == {:handle_event_function, nil, nil}
-      assert Thrower.code_change(nil, nil, nil, nil) == {:handle_event_function, nil, nil}
-    end
-  end
 end

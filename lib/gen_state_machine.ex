@@ -45,8 +45,8 @@ defmodule GenStateMachine do
       #=> 1
 
   We start our `Switch` by calling `start_link/3`, passing the module with the
-  server implementation and its initial argument (a tuple where the first element
-  is the initial state and the second is the initial data). We can primarily
+  server implementation and its initial argument, a tuple where the first element
+  is the initial state and the second is the initial data. We can primarily
   interact with the state machine by sending two types of messages. **call**
   messages expect a reply from the server (and are therefore synchronous) while
   **cast** messages do not.
@@ -63,18 +63,14 @@ defmodule GenStateMachine do
         def off(:cast, :flip, data) do
           {:next_state, :on, data + 1}
         end
-        def off(event_type, event_content, data) do
-          handle_event(event_type, event_content, data)
+        def off({:call, from}, :get_count, data) do
+          {:keep_state_and_data, [{:reply, from, data}]}
         end
 
         def on(:cast, :flip, data) do
           {:next_state, :off, data}
         end
-        def on(event_type, event_content, data) do
-          handle_event(event_type, event_content, data)
-        end
-
-        def handle_event({:call, from}, :get_count, data) do
+        def on({:call, from}, :get_count, data) do
           {:keep_state_and_data, [{:reply, from, data}]}
         end
       end
@@ -115,6 +111,45 @@ defmodule GenStateMachine do
   related to the quite difficult topic of hot upgrades, and if you need it, you
   should really be implementing it yourself. In normal use this callback will
   not be invoked.
+
+  ## State Enter Callbacks
+
+  If you wish, you can register to receive callbacks when you enter a state by
+  adding `:state_enter` to your `callback_mode`:
+
+      defmodule Switch do
+        use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
+
+        def handle_event(:enter, _event, state, data) do
+          {:next_state, state, %{data | enters: data.enters + 1}}
+        end
+
+        def handle_event(:cast, :flip, :off, data) do
+          {:next_state, :on, %{data | flips: data.flips + 1}}
+        end
+
+        def handle_event(:cast, :flip, :on, data) do
+          {:next_state, :off, data}
+        end
+
+        def handle_event({:call, from}, :get_count, _state, data) do
+          {:keep_state_and_data, [{:reply, from, data}]}
+        end
+      end
+
+      # Start the server
+      {:ok, pid} = GenStateMachine.start_link(Switch, {:off, %{enters: 0, flips: 0}})
+
+      # This is the client
+      GenStateMachine.cast(pid, :flip)
+      GenStateMachine.cast(pid, :flip)
+      #=> :ok
+
+      GenStateMachine.call(pid, :get_count)
+      #=> %{enters: 3, flips: 1}
+
+  See the Erlang [documentation](https://erlang.org/doc/man/gen_statem.html#type-state_enter)
+  for more details.
 
   ## Name Registration
 
@@ -251,14 +286,14 @@ defmodule GenStateMachine do
 
   `:info` will be received as a result of any regular process messages received.
 
-  `:timeout` will be received as a result of a `:timeout` action.
+  `:timeout` or `{:timeout, name}` will be received as a result of a `:timeout` action.
 
   `:state_timeout` will be received as a result of a `:state_timeout` action.
 
   `:internal` will be received as a result of a `:next_event` action.
 
-  See the erlang
-  [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_type)
+  See the Erlang
+  [documentation](https://erlang.org/doc/man/gen_statem.html#type-event_type)
   for details.
   """
   @type event_type :: :gen_statem.event_type()
@@ -268,7 +303,7 @@ defmodule GenStateMachine do
 
   See the Example section above for more info.
   """
-  @type callback_mode :: :gen_statem.callback_mode()
+  @type callback_mode_result :: :gen_statem.callback_mode_result()
 
   @typedoc """
   The message content received as the result of an event.
@@ -292,8 +327,8 @@ defmodule GenStateMachine do
   should be used when you want to reliably distinguish an event inserted this
   way from an external event.
 
-  See the erlang
-  [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-action)
+  See the Erlang
+  [documentation](https://erlang.org/doc/man/gen_statem.html#type-action)
   for the possible values.
   """
   @type action :: :gen_statem.action()
@@ -301,15 +336,23 @@ defmodule GenStateMachine do
   @typedoc """
   The return type of an event handler function.
 
-  See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
+  See the Erlang [documentation](https://erlang.org/doc/man/gen_statem.html#type-event_handler_result)
   for a complete reference.
   """
   @type event_handler_result(state) :: :gen_statem.event_handler_result(state)
 
   @typedoc """
+  The return type of a state enter function.
+
+  See the Erlang [documentation](https://erlang.org/doc/man/gen_statem.html#type-state_enter_result)
+  for a complete reference.
+  """
+  @type state_enter_result(state) :: :gen_statem.state_enter_result(state)
+
+  @typedoc """
   The return type when the server is started.
 
-  See the erlang [documentation](https://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-start_ret)
+  See the Erlang [documentation](https://erlang.org/doc/man/gen_statem.html#type-start_ret)
   for a complete reference.
   """
   @type on_start :: :gen_statem.start_ret()
@@ -317,7 +360,7 @@ defmodule GenStateMachine do
   @typedoc """
   The type of allowed server names.
 
-  See the erlang [documentation](https://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-server_ref)
+  See the Erlang [documentation](https://erlang.org/doc/man/gen_statem.html#type-server_ref)
   for a complete reference.
   """
   @type server_ref :: :gen_statem.server_ref()
@@ -362,16 +405,18 @@ defmodule GenStateMachine do
   call, cast, or normal process message, a state function is called.
 
   This spec exists to document the callback, but in actual use the name of the
-  function is probably not going to be state_name. Instead, there will be at
+  function is probably not going to be `state_name`. Instead, there will be at
   least one state function named after each state you wish to handle. See the
   Examples section above for more info.
 
   These functions can optionally throw a result to return it.
 
-  See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
+  See the Erlang [documentation](https://erlang.org/doc/man/gen_statem.html#Module:StateName-3)
   for a complete reference.
   """
-  @callback state_name(event_type, event_content, data) :: event_handler_result(state_name())
+  @callback state_name(:enter, old_state_name :: state_name, data) ::
+              state_enter_result(state_name)
+  @callback state_name(event_type, event_content, data) :: event_handler_result(state_name)
 
   @doc """
   Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
@@ -380,10 +425,11 @@ defmodule GenStateMachine do
 
   This function can optionally throw a result to return it.
 
-  See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
+  See the Erlang [documentation](https://erlang.org/doc/man/gen_statem.html#Module:handle_event-4)
   for a complete reference.
   """
-  @callback handle_event(event_type, event_content, state, data) :: event_handler_result(state())
+  @callback handle_event(:enter, old_state :: state, state, data) :: state_enter_result(state)
+  @callback handle_event(event_type, event_content, state, data) :: event_handler_result(state)
 
   @doc """
   Invoked when the server is about to exit. It should do any cleanup required.
@@ -439,13 +485,6 @@ defmodule GenStateMachine do
   Returning `{:ok, new_state, new_data}` changes the state to `new_state`, the
   data to `new_data`, and the code change is successful.
 
-  On OTP versions before 19.1, if you wish to change the callback mode as part
-  of an upgrade/downgrade, you may return
-  `{callback_mode, new_state, new_data}`. It is important to note however that
-  for a downgrade you must use the argument `extra`, `{:down, vsn}` from the
-  argument `old_vsn`, or some other data source to determine what the previous
-  callback mode was.
-
   Returning `reason` fails the code change with reason `reason` and the state
   and data remains the same.
 
@@ -457,7 +496,6 @@ defmodule GenStateMachine do
   """
   @callback code_change(old_vsn :: term | {:down, vsn :: term}, state, data, extra :: term) ::
               {:ok, state, data}
-              | {callback_mode, state, data}
               | (reason :: term)
 
   @doc """
@@ -486,63 +524,21 @@ defmodule GenStateMachine do
 
   @optional_callbacks state_name: 3, handle_event: 4, format_status: 2
 
-  @gen_statem_callback_mode_callback Application.loaded_applications()
-                                     |> Enum.find_value(fn {app, _, vsn} ->
-                                       app == :stdlib and vsn
-                                     end)
-                                     |> to_string()
-                                     |> String.split(".")
-                                     |> (case do
-                                           [major] ->
-                                             "#{major}.0.0"
-
-                                           [major, minor] ->
-                                             "#{major}.#{minor}.0"
-
-                                           [major, minor, patch | _] ->
-                                             "#{major}.#{minor}.#{patch}"
-                                         end)
-                                     |> Version.parse()
-                                     |> elem(1)
-                                     |> Version.match?(">= 3.1.0")
-
   @doc false
-  defmacro __using__(args) do
-    {callback_mode, args} = Keyword.pop(args, :callback_mode, :handle_event_function)
-
-    quote location: :keep do
+  defmacro __using__(opts) do
+    quote location: :keep, bind_quoted: [opts: opts] do
       @behaviour GenStateMachine
 
-      unless unquote(@gen_statem_callback_mode_callback) do
-        @before_compile GenStateMachine
-      end
+      {callback_mode, opts} = Keyword.pop(opts, :callback_mode, :handle_event_function)
 
-      @gen_statem_callback_mode unquote(callback_mode)
+      @doc false
+      def callback_mode do
+        unquote(Macro.escape(callback_mode))
+      end
 
       @doc false
       def init({state, data}) do
         {:ok, state, data}
-      end
-
-      if unquote(@gen_statem_callback_mode_callback) do
-        def callback_mode do
-          @gen_statem_callback_mode
-        end
-      end
-
-      @callback_mode_handle_event_function (case @gen_statem_callback_mode do
-                                              cbm when is_list(cbm) ->
-                                                Enum.member?(cbm, :handle_event_function)
-
-                                              cbm when is_atom(cbm) ->
-                                                cbm == :handle_event_function
-                                            end)
-
-      if @callback_mode_handle_event_function do
-        @doc false
-        def handle_event(_event_type, _event_content, _state, _data) do
-          {:stop, :bad_event}
-        end
       end
 
       @doc false
@@ -555,74 +551,30 @@ defmodule GenStateMachine do
         :undefined
       end
 
-      @doc """
-      Returns a specification to start this module under a supervisor.
+      unless Module.get_attribute(__MODULE__, :doc) do
+        @doc """
+        Returns a specification to start this module under a supervisor.
 
-      See `Supervisor` in Elixir v1.6+.
-      """
-      def child_spec(arg) do
-        default = %{id: __MODULE__, start: {__MODULE__, :start_link, [arg]}}
-
-        Enum.reduce(unquote(args), default, fn
-          {key, value}, acc when key in [:id, :start, :restart, :shutdown, :type, :modules] ->
-            Map.put(acc, key, value)
-
-          {key, _value}, _acc ->
-            raise ArgumentError, "unknown key #{inspect(key)} in child specification override"
-        end)
+        See `Supervisor`.
+        """
       end
 
-      overridable_funcs = [init: 1, terminate: 3, code_change: 4, child_spec: 1]
-
-      overridable_funcs =
-        if @callback_mode_handle_event_function do
-          [handle_event: 4] ++ overridable_funcs
-        else
-          overridable_funcs
-        end
-
-      defoverridable overridable_funcs
-    end
-  end
-
-  @doc false
-  defmacro __before_compile__(_env) do
-    quote location: :keep do
-      defoverridable init: 1, code_change: 4
-
-      @doc false
-      def init(args) do
-        result =
-          try do
-            super(args)
-          catch
-            thrown -> thrown
-          end
-
-        case result do
-          {:handle_event_function, _, _} = return -> {:stop, {:bad_return_value, return}}
-          {:state_functions, _, _} = return -> {:stop, {:bad_return_value, return}}
-          {:ok, state, data} -> {@gen_statem_callback_mode, state, data}
-          {:ok, state, data, actions} -> {@gen_statem_callback_mode, state, data, actions}
-          other -> other
-        end
+      def child_spec(init_arg) do
+        Supervisor.child_spec(
+          %{id: __MODULE__, start: {__MODULE__, :start_link, [init_arg]}},
+          unquote(Macro.escape(opts))
+        )
       end
 
-      @doc false
-      def code_change(old_vsn, state, data, extra) do
-        result =
-          try do
-            super(old_vsn, state, data, extra)
-          catch
-            thrown -> thrown
-          end
+      defoverridable init: 1, terminate: 3, code_change: 4, child_spec: 1
 
-        case result do
-          {:handle_event_function, state, data} -> {:handle_event_function, state, data}
-          {:state_functions, state, data} -> {:state_functions, state, data}
-          {:ok, state, data} -> {@gen_statem_callback_mode, state, data}
-          other -> other
+      if :handle_event_function in List.wrap(callback_mode) do
+        @doc false
+        def handle_event(_event_type, _event_content, _state, _data) do
+          {:stop, :bad_event}
         end
+
+        defoverridable handle_event: 4
       end
     end
   end
@@ -780,7 +732,7 @@ defmodule GenStateMachine do
 
   See `reply/2` for more information.
   """
-  @spec reply([:gen_statem.reply_action()]) :: :ok
+  @spec reply([:gen_statem.reply_action()] | :gen_statem.reply_action()) :: :ok
   def reply(replies) do
     :gen_statem.reply(replies)
   end

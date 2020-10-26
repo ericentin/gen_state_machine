@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.0.0 (2020-10-26)
+
+### Backwards incompatible changes
+
+* The minimum supported OTP release is now 20.
+* The minimum supported Elixir release is now v1.5.
+
+### Enhancements
+
+* More typespecs from `:gen_statem` exposed for use.
+* Documentation updated.
+
 ## v2.1.0 (2020-01-24)
 
 * Typespecs now rely on gen_statem upstream types where available.

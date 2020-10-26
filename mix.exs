@@ -5,20 +5,20 @@ otp_release =
   |> List.first()
   |> String.to_integer()
 
-if otp_release < 19 do
-  IO.warn("gen_state_machine requires Erlang/OTP 19 or greater", [])
+if otp_release < 20 do
+  IO.warn("gen_state_machine requires Erlang/OTP 20 or greater", [])
 end
 
 defmodule GenStateMachine.Mixfile do
   use Mix.Project
 
-  @version "2.1.0"
+  @version "3.0.0"
 
   def project do
     [
       app: :gen_state_machine,
       version: @version,
-      elixir: "~> 1.3",
+      elixir: "~> 1.5",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -34,12 +34,16 @@ defmodule GenStateMachine.Mixfile do
   end
 
   def application do
-    [applications: [:logger], mod: {GenStateMachine.Application, []}]
+    [
+      extra_applications: [:logger],
+      mod: {GenStateMachine.Application, []}
+    ]
   end
 
   defp deps do
     [
-      {:ex_doc, "~> 0.12", only: :dev}
+      {:ex_doc, "~> 0.23", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0", only: :dev, runtime: false}
     ]
   end
 
