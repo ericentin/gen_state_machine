@@ -306,6 +306,14 @@ defmodule GenStateMachine do
   """
   @type event_handler_result(state) :: :gen_statem.event_handler_result(state)
 
+  @typedoc """
+  The return type when the server is started.
+
+  See the erlang [documentation](https://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-start_ret)
+  for a complete reference.
+  """
+  @type on_start :: :gen_statem.start_ret()
+
   @doc """
   Invoked when the server is started. `start_link/3` (or `start/3`) will
   block until it returns.
@@ -654,7 +662,7 @@ defmodule GenStateMachine do
   or `:ignore`, the process is terminated and this function returns
   `{:error, reason}` or `:ignore`, respectively.
   """
-  @spec start_link(module, any, GenServer.options()) :: :gen_statem.start_ret()
+  @spec start_link(module, any, GenServer.options()) :: on_start()
   def start_link(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
@@ -678,7 +686,7 @@ defmodule GenStateMachine do
 
   See `start_link/3` for more information.
   """
-  @spec start(module, any, GenServer.options()) :: :gen_statem.start_ret()
+  @spec start(module, any, GenServer.options()) :: on_start()
   def start(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
