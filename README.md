@@ -2,7 +2,7 @@
 
 # GenStateMachine
 
-An idiomatic Elixir wrapper for `gen_statem` in OTP 19 (and above).
+An idiomatic Elixir wrapper for `gen_statem` in OTP 20 (and above).
 
 **Full documentation is available [here](https://hexdocs.pm/gen_state_machine).**
 
@@ -10,10 +10,7 @@ An idiomatic Elixir wrapper for `gen_statem` in OTP 19 (and above).
 
 One important difference between `gen_statem` and this wrapper is that you
 declare your callback mode as part of `use GenStateMachine` in this wrapper,
-rather than returning it from `callback_mode/0` on OTP 19.1 and up, or your
-`init/1` and `code_change/4` on versions of OTP prior to 19.1. In versions of
-OTP prior to 19.1, you can still, however, switch callback modes in
-`code_change/4` by returning a callback mode.
+rather than returning it from `callback_mode/0`.
 
 Other than that (and the usual automatically-defined default callbacks as a
 result of `use`-ing `GenStateMachine`), this wrapper does not make any
@@ -31,7 +28,7 @@ added to `Logger`.
 
   ```elixir
   def deps do
-    [{:gen_state_machine, "~> 2.0"}]
+    [{:gen_state_machine, "~> 3.0"}]
   end
   ```
 
