@@ -314,6 +314,14 @@ defmodule GenStateMachine do
   """
   @type on_start :: :gen_statem.start_ret()
 
+  @typedoc """
+  The type of allowed server names.
+
+  See the erlang [documentation](https://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-server_ref)
+  for a complete reference.
+  """
+  @type server_ref :: :gen_statem.server_ref()
+
   @doc """
   Invoked when the server is started. `start_link/3` (or `start/3`) will
   block until it returns.
@@ -715,7 +723,7 @@ defmodule GenStateMachine do
   If the reason is any other than `:normal`, `:shutdown` or
   `{:shutdown, _}`, an error report is logged.
   """
-  @spec stop(:gen_statem.server_ref(), reason :: term, timeout) :: :ok
+  @spec stop(server_ref(), reason :: term, timeout) :: :ok
   def stop(server, reason \\ :normal, timeout \\ :infinity) do
     :gen_statem.stop(server, reason, timeout)
   end
@@ -742,7 +750,7 @@ defmodule GenStateMachine do
   gets delivered to the dead proxy process, and hence gets discarded. This is
   less efficient than using `:infinity` as a timeout.
   """
-  @spec call(:gen_statem.server_ref(), term, timeout) :: term
+  @spec call(server_ref(), term, timeout) :: term
   def call(server, request, timeout \\ :infinity) do
     :gen_statem.call(server, request, timeout)
   end
@@ -758,7 +766,7 @@ defmodule GenStateMachine do
   The appropriate state function will be called on the server to handle
   the request.
   """
-  @spec cast(:gen_statem.server_ref(), term) :: :ok
+  @spec cast(server_ref(), term) :: :ok
   def cast(server, request) do
     :gen_statem.cast(server, request)
   end
