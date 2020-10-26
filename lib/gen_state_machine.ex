@@ -298,6 +298,14 @@ defmodule GenStateMachine do
   """
   @type action :: :gen_statem.action()
 
+  @typedoc """
+  The return type of an event handler function.
+
+  See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
+  for a complete reference.
+  """
+  @type event_handler_result(state) :: :gen_statem.event_handler_result(state)
+
   @doc """
   Invoked when the server is started. `start_link/3` (or `start/3`) will
   block until it returns.
@@ -347,8 +355,7 @@ defmodule GenStateMachine do
   See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
   for a complete reference.
   """
-  @callback state_name(event_type, event_content, data) ::
-              :gen_statem.event_handler_result(state_name())
+  @callback state_name(event_type, event_content, data) :: event_handler_result(state_name())
 
   @doc """
   Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
@@ -360,8 +367,7 @@ defmodule GenStateMachine do
   See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
   for a complete reference.
   """
-  @callback handle_event(event_type, event_content, state, data) ::
-              :gen_statem.event_handler_result(state())
+  @callback handle_event(event_type, event_content, state, data) :: event_handler_result(state())
 
   @doc """
   Invoked when the server is about to exit. It should do any cleanup required.
