@@ -298,6 +298,22 @@ defmodule GenStateMachine do
   """
   @type action :: :gen_statem.action()
 
+  @typedoc """
+  The return type of an event handler function.
+
+  See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
+  for a complete reference.
+  """
+  @type event_handler_result(state) :: :gen_statem.event_handler_result(state)
+
+  @typedoc """
+  The return type when the server is started.
+
+  See the erlang [documentation](https://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-start_ret)
+  for a complete reference.
+  """
+  @type on_start :: :gen_statem.start_ret()
+
   @doc """
   Invoked when the server is started. `start_link/3` (or `start/3`) will
   block until it returns.
@@ -347,8 +363,7 @@ defmodule GenStateMachine do
   See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
   for a complete reference.
   """
-  @callback state_name(event_type, event_content, data) ::
-              :gen_statem.event_handler_result(state_name())
+  @callback state_name(event_type, event_content, data) :: event_handler_result(state_name())
 
   @doc """
   Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
@@ -360,8 +375,7 @@ defmodule GenStateMachine do
   See the erlang [documentation](http://erlang.org/documentation/doc-9.0/lib/stdlib-3.4/doc/html/gen_statem.html#type-event_handler_result)
   for a complete reference.
   """
-  @callback handle_event(event_type, event_content, state, data) ::
-              :gen_statem.event_handler_result(state())
+  @callback handle_event(event_type, event_content, state, data) :: event_handler_result(state())
 
   @doc """
   Invoked when the server is about to exit. It should do any cleanup required.
@@ -648,7 +662,7 @@ defmodule GenStateMachine do
   or `:ignore`, the process is terminated and this function returns
   `{:error, reason}` or `:ignore`, respectively.
   """
-  @spec start_link(module, any, GenServer.options()) :: :gen_statem.start_ret()
+  @spec start_link(module, any, GenServer.options()) :: on_start()
   def start_link(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
@@ -672,7 +686,7 @@ defmodule GenStateMachine do
 
   See `start_link/3` for more information.
   """
-  @spec start(module, any, GenServer.options()) :: :gen_statem.start_ret()
+  @spec start(module, any, GenServer.options()) :: on_start()
   def start(module, args, options \\ []) do
     {name, options} = Keyword.pop(options, :name)
 
