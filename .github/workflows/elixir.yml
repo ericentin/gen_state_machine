@@ -9,10 +9,14 @@ jobs:
     strategy:
       matrix:
         otp: [20, 21, 22, 23]
-        elixir: [1.5, 1.6, 1.7, 1.8, 1.9, 1.10, 1.11]
+        elixir: [1.5, 1.6, 1.7, 1.8, 1.9, "1.10", 1.11]
         exclude:
           - otp: 20
-            elixir: [1.10, 1.11]
+            elixir: "1.10"
+          - otp: 20
+            elixir: 1.11
+          - otp: 23
+            elixir: 1.5
 
     steps:
     - uses: actions/checkout@v2
