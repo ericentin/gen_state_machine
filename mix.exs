@@ -12,6 +12,7 @@ end
 defmodule GenStateMachine.Mixfile do
   use Mix.Project
 
+  @source_url "https://github.com/ericentin/gen_state_machine"
   @version "3.0.0"
 
   def project do
@@ -24,11 +25,12 @@ defmodule GenStateMachine.Mixfile do
       deps: deps(),
       description: description(),
       package: package(),
-      source_url: "https://github.com/ericentin/gen_state_machine",
       docs: [
-        main: "GenStateMachine",
-        extras: ["README.md"],
-        source_ref: "v#{@version}"
+        main: "readme",
+        extras: ["CHANGELOG.md", "README.md"],
+        source_url: @source_url,
+        source_ref: "v#{@version}",
+        api_reference: false
       ]
     ]
   end
@@ -53,11 +55,12 @@ defmodule GenStateMachine.Mixfile do
 
   defp package do
     [
-      files: ["lib", "mix.exs", "README.md", "LICENSE"],
+      files: ["lib", "mix.exs", "README.md", "CHANGELOG.md", "LICENSE"],
       maintainers: ["Eric Entin"],
-      licenses: ["Apache 2.0"],
+      licenses: ["Apache-2.0"],
       links: %{
-        "GitHub" => "https://github.com/ericentin/gen_state_machine"
+        "Changelog" => "https://hexdocs.pm/gen_state_machine/changelog.html",
+        "GitHub" => @source_url
       }
     ]
   end
