@@ -420,7 +420,7 @@ defmodule GenStateMachine do
 
   @doc """
   Whenever a `GenStateMachine` in callback mode `:handle_event_function` (the
-  default) receives a call, cast, or normal process messsage, this callback will
+  default) receives a call, cast, or normal process message, this callback will
   be invoked.
 
   This function can optionally throw a result to return it.
