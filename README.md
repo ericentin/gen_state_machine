@@ -24,19 +24,11 @@ added to `Logger`.
 
 ## Installation
 
-  1. Add `gen_state_machine` to your list of dependencies in `mix.exs`:
+  Add `gen_state_machine` to your list of dependencies in `mix.exs`:
 
   ```elixir
   def deps do
     [{:gen_state_machine, "~> 3.0"}]
-  end
-  ```
-
-  2. Ensure `gen_state_machine` is added to your applications:
-
-  ```elixir
-  def application do
-    [applications: [:gen_state_machine]]
   end
   ```
 
